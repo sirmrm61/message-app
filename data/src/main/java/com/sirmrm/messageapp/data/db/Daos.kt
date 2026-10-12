@@ -110,6 +110,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE category = 'UNKNOWN'")
     suspend fun unclassifiedMessages(): List<MessageEntity>
 
+    @Query("SELECT * FROM messages WHERE category = 'TRANSACTIONAL' ORDER BY date DESC, id DESC")
+    fun observeTransactional(): Flow<List<MessageEntity>>
+
     @Query("SELECT * FROM messages")
     suspend fun exportAll(): List<MessageEntity>
 

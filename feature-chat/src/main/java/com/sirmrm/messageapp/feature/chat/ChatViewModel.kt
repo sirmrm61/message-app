@@ -33,6 +33,9 @@ data class ChatUiState(
     val sendError: String? = null,
     val draft: String = "",
     val selectedSim: Int = -1,
+    val searchQuery: String = "",
+    /** Day filter (millis of the selected day); null = no filter. */
+    val filterDate: Long? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -50,6 +53,8 @@ class ChatViewModel @Inject constructor(
     private val sendError = MutableStateFlow<String?>(null)
     private val draft = MutableStateFlow("")
     private val selectedSim = MutableStateFlow(-1)
+    private val searchQuery = MutableStateFlow("")
+    private val filterDate = MutableStateFlow<Long?>(null)
 
     private val messages = threadId.flatMapLatest { id ->
         if (id > 0) messageRepository.observeMessages(id) else flowOf(emptyList())
@@ -61,6 +66,7 @@ class ChatViewModel @Inject constructor(
     val state: StateFlow<ChatUiState> = combine(
         messages, conversation, settingsRepository.settings,
         sending, sendError, draft, selectedSim, threadId,
+        searchQuery, filterDate,
     ) { arr ->
         @Suppress("UNCHECKED_CAST")
         ChatUiState(
@@ -72,8 +78,13 @@ class ChatViewModel @Inject constructor(
             draft = arr[5] as String,
             selectedSim = arr[6] as Int,
             threadId = arr[7] as Long,
+            searchQuery = arr[8] as String,
+            filterDate = arr[9] as Long?,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ChatUiState())
+
+    fun setSearchQuery(q: String) { searchQuery.value = q }
+    fun setFilterDate(ts: Long?) { filterDate.value = ts }
 
     fun init(id: Long) {
         threadId.value = id

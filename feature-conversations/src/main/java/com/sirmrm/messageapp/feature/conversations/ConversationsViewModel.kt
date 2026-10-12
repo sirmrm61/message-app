@@ -2,8 +2,12 @@ package com.sirmrm.messageapp.feature.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sirmrm.messageapp.classifier.BankTxParser
 import com.sirmrm.messageapp.data.classifier.ClassifierManager
+import com.sirmrm.messageapp.data.db.MessageDao
+import com.sirmrm.messageapp.data.db.toDomain
 import com.sirmrm.messageapp.domain.model.AppSettings
+import com.sirmrm.messageapp.domain.model.SmsMessage
 import com.sirmrm.messageapp.domain.model.Conversation
 import com.sirmrm.messageapp.domain.model.MessageFolder
 import com.sirmrm.messageapp.domain.repository.ConversationRepository
@@ -17,7 +21,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ConversationsUiState(
@@ -27,9 +33,29 @@ data class ConversationsUiState(
     val promosCleanedThisWeek: Int = 0,
     val settings: AppSettings? = null,
     val selection: Set<Long> = emptySet(),
+    /** Bank transactions (TRANSACTIONAL messages that parse as bank SMS). */
+    val transactions: List<BankTxItem> = emptyList(),
+    val txSelection: Set<Long> = emptySet(),
+    val filterDate: Long? = null,
 ) {
     val selectionMode: Boolean get() = selection.isNotEmpty()
+    val txSelectionMode: Boolean get() = txSelection.isNotEmpty()
+
+    val depositCount: Int get() = transactions.count { it.direction == BankTxParser.Direction.DEPOSIT }
+    val withdrawalCount: Int get() = transactions.count { it.direction == BankTxParser.Direction.WITHDRAWAL }
+
+    fun selectedSum(dir: BankTxParser.Direction): Long = transactions
+        .filter { it.id in txSelection && it.direction == dir }
+        .sumOf { it.amountRials ?: 0L }
 }
+
+/** A transactional message enriched with its parsed bank record. */
+data class BankTxItem(
+    val id: Long,
+    val message: SmsMessage,
+    val direction: BankTxParser.Direction,
+    val amountRials: Long?,
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -38,6 +64,7 @@ class ConversationsViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val settingsRepository: SettingsRepository,
     classifierManager: ClassifierManager,
+    messageDao: MessageDao,
 ) : ViewModel() {
 
     init {
@@ -49,22 +76,49 @@ class ConversationsViewModel @Inject constructor(
     private val folder = MutableStateFlow(MessageFolder.INBOX)
     private val query = MutableStateFlow("")
     private val selection = MutableStateFlow<Set<Long>>(emptySet())
+    private val txSelection = MutableStateFlow<Set<Long>>(emptySet())
+    private val filterDate = MutableStateFlow<Long?>(null)
+
+    private val transactions = messageDao.observeTransactional().map { list ->
+        list.map { it.toDomain() }
+            .mapNotNull { m ->
+                BankTxParser.parse(m.body)?.let { tx ->
+                    BankTxItem(m.id, m, tx.direction, tx.amountRials)
+                }
+            }
+    }
 
     private val conversations = combine(folder, query) { f, q -> f to q }
         .flatMapLatest { (f, q) -> conversationRepository.observeConversations(f, q) }
 
+    private val filteredConversations = combine(conversations, filterDate) { list, day ->
+        if (day == null) list
+        else list.filter { com.sirmrm.messageapp.core.util.JalaliDate.sameDay(it.lastMessageDate, day) }
+    }
+
     val state: StateFlow<ConversationsUiState> = combine(
-        conversations, settingsRepository.settings, folder, query, selection,
-    ) { convs, settings, f, q, sel ->
+        filteredConversations, settingsRepository.settings, folder, query, selection,
+        transactions, txSelection, filterDate,
+    ) { arr ->
+        @Suppress("UNCHECKED_CAST")
         ConversationsUiState(
-            folder = f,
-            query = q,
-            conversations = convs,
-            promosCleanedThisWeek = settings.promosCleanedThisWeek,
-            settings = settings,
-            selection = sel,
+            folder = arr[2] as MessageFolder,
+            query = arr[3] as String,
+            conversations = arr[0] as List<Conversation>,
+            promosCleanedThisWeek = (arr[1] as AppSettings).promosCleanedThisWeek,
+            settings = arr[1] as AppSettings,
+            selection = arr[4] as Set<Long>,
+            transactions = arr[5] as List<BankTxItem>,
+            txSelection = arr[6] as Set<Long>,
+            filterDate = arr[7] as Long?,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConversationsUiState())
+
+    fun setFilterDate(ts: Long?) { filterDate.value = ts }
+
+    fun toggleTxSelection(id: Long) = txSelection.update {
+        if (id in it) it - id else it + id
+    }
 
     fun selectFolder(f: MessageFolder) {
         folder.value = f

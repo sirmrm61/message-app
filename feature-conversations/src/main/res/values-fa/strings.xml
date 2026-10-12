@@ -23,4 +23,11 @@
     <string name="folder_archive">آرشیو</string>
     <string name="folder_trash">سطل بازیافت</string>
     <string name="badge_maybe_promo">شاید تبلیغ</string>
+    <string name="folder_discount">تخفیف</string>
+    <string name="action_filter_date">فیلتر بر اساس تاریخ</string>
+    <string name="tx_counts">%1$d واریز • %2$d برداشت</string>
+    <string name="tx_selected_sums">واریز %1$s ریال • برداشت %2$s ریال</string>
+    <string name="tx_deposit">واریز</string>
+    <string name="tx_withdrawal">برداشت</string>
+    <string name="rial_unit">ریال</string>
 </resources>

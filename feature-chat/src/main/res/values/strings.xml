@@ -25,4 +25,6 @@
     <string name="reason_free">Free offer</string>
     <string name="reason_visit">Visit/install invite</string>
     <string name="reason_percent">Percent off</string>
+    <string name="search_in_thread">Search in thread</string>
+    <string name="action_filter_date">Filter by date</string>
 </resources>

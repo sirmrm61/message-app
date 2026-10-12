@@ -85,6 +85,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sirmrm.messageapp.classifier.BankTxParser
 import com.sirmrm.messageapp.core.util.JalaliDate
 import com.sirmrm.messageapp.core.util.PersianDigits.toPersianDigits
 import com.sirmrm.messageapp.domain.model.CalendarMode
@@ -181,22 +182,40 @@ fun ConversationsScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = viewModel::setQuery,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                placeholder = { Text(stringResource(R.string.search_hint)) },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                singleLine = true,
-            )
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = viewModel::setQuery,
+                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                    placeholder = { Text(stringResource(R.string.search_hint)) },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    singleLine = true,
+                )
+                DateFilterButton(
+                    filterDate = state.filterDate,
+                    calendar = state.settings?.calendar ?: CalendarMode.JALALI,
+                    digits = state.settings?.digits ?: DigitStyle.PERSIAN,
+                    onPick = viewModel::setFilterDate,
+                    onClear = { viewModel.setFilterDate(null) },
+                )
+            }
 
             FolderTabs(
                 selected = state.folder,
                 onSelect = viewModel::selectFolder,
             )
 
+            if (state.folder == MessageFolder.TRANSACTIONAL) {
+                TransactionsView(
+                    state = state,
+                    calendar = state.settings?.calendar ?: CalendarMode.JALALI,
+                    digits = state.settings?.digits ?: DigitStyle.PERSIAN,
+                    onToggle = viewModel::toggleTxSelection,
+                )
+            } else {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(state.conversations, key = { it.id }) { conv ->
                     ConversationRow(
@@ -222,6 +241,131 @@ fun ConversationsScreen(
                     )
                 }
             }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun TransactionsView(
+    state: ConversationsUiState,
+    calendar: CalendarMode,
+    digits: DigitStyle,
+    onToggle: (Long) -> Unit,
+) {
+    val tx = state.transactions
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            stringResource(R.string.tx_counts, state.depositCount, state.withdrawalCount),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        if (state.txSelectionMode) {
+            Text(
+                stringResource(
+                    R.string.tx_selected_sums,
+                    formatAmount(state.selectedSum(BankTxParser.Direction.DEPOSIT), digits),
+                    formatAmount(state.selectedSum(BankTxParser.Direction.WITHDRAWAL), digits),
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+        LazyColumn(Modifier.fillMaxSize()) {
+            items(tx, key = { it.id }) { item ->
+                val selected = item.id in state.txSelection
+                Surface(
+                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+                    else MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = { onToggle(item.id) },
+                            onLongClick = { onToggle(item.id) },
+                        ),
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(item.message.address, style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                item.message.body,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                JalaliDate.formatDayHeader(item.message.date, calendar, digits),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                when (item.direction) {
+                                    BankTxParser.Direction.DEPOSIT -> stringResource(R.string.tx_deposit)
+                                    BankTxParser.Direction.WITHDRAWAL -> stringResource(R.string.tx_withdrawal)
+                                    else -> "—"
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (item.direction == BankTxParser.Direction.DEPOSIT)
+                                    MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                            )
+                            item.amountRials?.let {
+                                Text(
+                                    formatAmount(it, digits),
+                                    style = MaterialTheme.typography.labelLarge,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatAmount(rials: Long, digits: DigitStyle): String {
+    val s = "%,d".format(rials)
+    return if (digits == DigitStyle.PERSIAN) s.toPersianDigits() else s
+}
+
+@Composable
+private fun DateFilterButton(
+    filterDate: Long?,
+    calendar: CalendarMode,
+    digits: DigitStyle,
+    onPick: (Long) -> Unit,
+    onClear: () -> Unit,
+) {
+    val context = LocalContext.current
+    if (filterDate != null) {
+        TextButton(onClick = onClear) {
+            Text(JalaliDate.format(filterDate, calendar, digits))
+            Icon(Icons.Default.Close, null, Modifier.size(14.dp))
+        }
+    } else {
+        IconButton(onClick = {
+            val c = java.util.Calendar.getInstance()
+            android.app.DatePickerDialog(
+                context,
+                { _, y, m, d ->
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(y, m, d, 12, 0, 0)
+                    onPick(cal.timeInMillis)
+                },
+                c.get(java.util.Calendar.YEAR),
+                c.get(java.util.Calendar.MONTH),
+                c.get(java.util.Calendar.DAY_OF_MONTH),
+            ).show()
+        }) {
+            Icon(Icons.Default.MoreVert, stringResource(R.string.action_filter_date))
         }
     }
 }
@@ -259,6 +403,7 @@ private fun FolderTabs(selected: MessageFolder, onSelect: (MessageFolder) -> Uni
         MessageFolder.PERSONAL to R.string.folder_personal,
         MessageFolder.OTP to R.string.folder_otp,
         MessageFolder.TRANSACTIONAL to R.string.folder_transactional,
+        MessageFolder.DISCOUNT to R.string.folder_discount,
         MessageFolder.PROMOTIONS to R.string.folder_promotions,
         MessageFolder.ARCHIVE to R.string.folder_archive,
         MessageFolder.TRASH to R.string.folder_trash,

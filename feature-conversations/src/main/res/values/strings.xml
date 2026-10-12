@@ -23,4 +23,11 @@
     <string name="folder_archive">Archive</string>
     <string name="folder_trash">Trash</string>
     <string name="badge_maybe_promo">maybe promo</string>
+    <string name="folder_discount">Discount</string>
+    <string name="action_filter_date">Filter by date</string>
+    <string name="tx_counts">%1$d deposits • %2$d withdrawals</string>
+    <string name="tx_selected_sums">Deposits %1$s • Withdrawals %2$s</string>
+    <string name="tx_deposit">Deposit</string>
+    <string name="tx_withdrawal">Withdrawal</string>
+    <string name="rial_unit">IRR</string>
 </resources>

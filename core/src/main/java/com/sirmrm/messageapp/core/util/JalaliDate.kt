@@ -56,6 +56,34 @@ object JalaliDate {
         a.get(Calendar.YEAR) == b.get(Calendar.YEAR) &&
             a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
 
+    fun sameDay(t1: Long, t2: Long): Boolean {
+        val a = Calendar.getInstance().apply { timeInMillis = t1 }
+        val b = Calendar.getInstance().apply { timeInMillis = t2 }
+        return sameDay(a, b)
+    }
+
+    private val WEEKDAYS = arrayOf(
+        "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه",
+    )
+
+    /** «یکشنبه ۲۰ مهر ۱۴۰۴» — centered day header in a chat list. */
+    fun formatDayHeader(timestamp: Long, mode: CalendarMode, digits: DigitStyle): String {
+        val c = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val weekday = WEEKDAYS[c.get(Calendar.DAY_OF_WEEK) - 1]
+        val s = "$weekday ${format(timestamp, mode, digits)}"
+        return s
+    }
+
+    /** Full timestamp under a message: weekday + date + time. */
+    fun formatFull(timestamp: Long, mode: CalendarMode, digits: DigitStyle): String =
+        "${formatDayHeader(timestamp, mode, digits)} - ${formatTime(timestamp, digits)}"
+
+    /** Day-of-year key for grouping messages by calendar day. */
+    fun dayKey(timestamp: Long): Long {
+        val c = Calendar.getInstance().apply { timeInMillis = timestamp }
+        return c.get(Calendar.YEAR) * 1000L + c.get(Calendar.DAY_OF_YEAR)
+    }
+
     data class Jalali(val year: Int, val month: Int, val day: Int)
 
     fun gregorianToJalali(timestamp: Long): Jalali {

@@ -106,6 +106,33 @@ fun ChatScreen(
                     label = { Text(stringResource(R.string.chat_recipient)) },
                     singleLine = true,
                 )
+            } else {
+                ThreadFilterBar(
+                    query = state.searchQuery,
+                    filterDate = state.filterDate,
+                    calendar = state.settings?.calendar ?: CalendarMode.JALALI,
+                    digits = state.settings?.digits ?: DigitStyle.PERSIAN,
+                    onQuery = viewModel::setSearchQuery,
+                    onDate = viewModel::setFilterDate,
+                )
+            }
+
+            val searchQuery = state.searchQuery
+            val filterDate = state.filterDate
+            val filtered = state.messages.filter { m ->
+                (searchQuery.isBlank() ||
+                    m.body.contains(searchQuery, ignoreCase = true)) &&
+                    (filterDate == null || JalaliDate.sameDay(m.date, filterDate))
+            }
+            val grouped = remember(filtered, state.settings) {
+                buildList<Any?> {
+                    var lastDay = -1L
+                    for (m in filtered) {
+                        val k = JalaliDate.dayKey(m.date)
+                        if (k != lastDay) { lastDay = k; add(k) }
+                        add(m)
+                    }
+                }
             }
 
             LazyColumn(
@@ -114,14 +141,32 @@ fun ChatScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.messages, key = { it.id }) { msg ->
-                    MessageBubble(
-                        message = msg,
-                        calendar = state.settings?.calendar ?: CalendarMode.JALALI,
-                        digits = state.settings?.digits ?: DigitStyle.PERSIAN,
-                        onMarkPromo = { viewModel.markPromo(msg, true) },
-                        onMarkNotPromo = { viewModel.markPromo(msg, false) },
-                    )
+                items(
+                    grouped,
+                    key = { if (it is SmsMessage) it.id else it as Long },
+                ) { item ->
+                    if (item is SmsMessage) {
+                        val msg = item
+                        MessageBubble(
+                            message = msg,
+                            calendar = state.settings?.calendar ?: CalendarMode.JALALI,
+                            digits = state.settings?.digits ?: DigitStyle.PERSIAN,
+                            onMarkPromo = { viewModel.markPromo(msg, true) },
+                            onMarkNotPromo = { viewModel.markPromo(msg, false) },
+                        )
+                    } else {
+                        Text(
+                            JalaliDate.formatDayHeader(
+                                dayKeyToMillis(item as Long),
+                                state.settings?.calendar ?: CalendarMode.JALALI,
+                                state.settings?.digits ?: DigitStyle.PERSIAN,
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                    }
                 }
             }
 
@@ -173,7 +218,7 @@ private fun MessageBubble(
                 Text(message.body, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    JalaliDate.formatListDate(message.date, calendar, digits),
+                    JalaliDate.formatFull(message.date, calendar, digits),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -242,6 +287,59 @@ private fun OtpCodeCard(body: String) {
 }
 
 private val OTP_CODE_REGEX = Regex("""\b\d{4,8}\b""")
+
+private fun dayKeyToMillis(key: Long): Long =
+    java.util.Calendar.getInstance().apply {
+        clear()
+        set(java.util.Calendar.YEAR, (key / 1000).toInt())
+        set(java.util.Calendar.DAY_OF_YEAR, (key % 1000).toInt())
+    }.timeInMillis
+
+@Composable
+private fun ThreadFilterBar(
+    query: String,
+    filterDate: Long?,
+    calendar: CalendarMode,
+    digits: DigitStyle,
+    onQuery: (String) -> Unit,
+    onDate: (Long?) -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQuery,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(R.string.search_in_thread)) },
+            singleLine = true,
+        )
+        if (filterDate != null) {
+            TextButton(onClick = { onDate(null) }) {
+                Text(JalaliDate.format(filterDate, calendar, digits))
+            }
+        } else {
+            IconButton(onClick = {
+                val c = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(
+                    context,
+                    { _, y, m, d ->
+                        val cal = java.util.Calendar.getInstance()
+                        cal.set(y, m, d, 12, 0, 0)
+                        onDate(cal.timeInMillis)
+                    },
+                    c.get(java.util.Calendar.YEAR),
+                    c.get(java.util.Calendar.MONTH),
+                    c.get(java.util.Calendar.DAY_OF_MONTH),
+                ).show()
+            }) {
+                Icon(Icons.Default.Info, stringResource(R.string.action_filter_date))
+            }
+        }
+    }
+}
 
 @Composable
 private fun ReasonChips(message: SmsMessage) {

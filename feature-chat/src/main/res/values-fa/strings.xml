@@ -25,4 +25,6 @@
     <string name="reason_free">پیشنهاد رایگان</string>
     <string name="reason_visit">دعوت به بازدید</string>
     <string name="reason_percent">درصد تخفیف</string>
+    <string name="search_in_thread">جست‌وجو در گفت‌وگو</string>
+    <string name="action_filter_date">فیلتر تاریخ</string>
 </resources>

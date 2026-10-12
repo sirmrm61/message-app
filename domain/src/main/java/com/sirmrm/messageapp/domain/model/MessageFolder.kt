@@ -17,6 +17,9 @@ enum class MessageFolder {
     /** Advertising messages — auto-moved or user-moved. */
     PROMOTIONS,
 
+    /** Discount / coupon / sale promos — subset of advertising. */
+    DISCOUNT,
+
     /** User-archived conversations. */
     ARCHIVE,
 
