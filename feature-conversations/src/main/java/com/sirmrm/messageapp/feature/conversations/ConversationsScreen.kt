@@ -40,11 +40,13 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -252,6 +254,9 @@ fun ConversationsScreen(
                     digits = state.settings?.digits ?: DigitStyle.PERSIAN,
                     onToggle = viewModel::toggleTxSelection,
                     onSelectAll = viewModel::selectAllTx,
+                    onSubtypeFilter = viewModel::setTxSubtypeFilter,
+                    onMonthlyToggle = viewModel::toggleMonthlySums,
+                    onFeedback = { item, isTx -> viewModel.feedbackTransactional(item, isTx) },
                 )
             } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -292,7 +297,11 @@ private fun TransactionsView(
     digits: DigitStyle,
     onToggle: (Long) -> Unit,
     onSelectAll: () -> Unit,
+    onSubtypeFilter: (BankTxParser.TxSubtype?) -> Unit,
+    onMonthlyToggle: () -> Unit,
+    onFeedback: (BankTxItem, Boolean) -> Unit,
 ) {
+    val clipboard = LocalClipboardManager.current
     val tx = state.transactions
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -305,8 +314,45 @@ private fun TransactionsView(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f).padding(vertical = 4.dp),
             )
+            TextButton(onClick = onMonthlyToggle) {
+                Text(stringResource(R.string.tx_monthly))
+            }
             TextButton(onClick = onSelectAll) {
                 Text(stringResource(R.string.action_select_all))
+            }
+        }
+        if (state.showMonthlySums) {
+            val (dep, wdr) = state.monthlySums(System.currentTimeMillis())
+            Text(
+                stringResource(
+                    R.string.tx_monthly_sums,
+                    formatAmount(dep, digits),
+                    formatAmount(wdr, digits),
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+        // Subtype filter chips: واریز / برداشت / خرید-پرداخت / OTP / چک / وام / امنیتی
+        Row(Modifier.padding(horizontal = 12.dp)) {
+            val chips = listOf(
+                null to R.string.tx_filter_all,
+                BankTxParser.TxSubtype.DEPOSIT to R.string.tx_deposit,
+                BankTxParser.TxSubtype.WITHDRAWAL to R.string.tx_withdrawal,
+                BankTxParser.TxSubtype.PURCHASE_PAYMENT to R.string.tx_purchase,
+                BankTxParser.TxSubtype.OTP to R.string.tx_otp,
+                BankTxParser.TxSubtype.CHEQUE to R.string.tx_cheque,
+                BankTxParser.TxSubtype.LOAN to R.string.tx_loan,
+                BankTxParser.TxSubtype.SECURITY to R.string.tx_security,
+            )
+            for ((sub, label) in chips) {
+                FilterChip(
+                    selected = state.txSubtypeFilter == sub,
+                    onClick = { onSubtypeFilter(if (state.txSubtypeFilter == sub) null else sub) },
+                    label = { Text(stringResource(label)) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
             }
         }
         if (state.txSelectionMode) {
@@ -323,6 +369,35 @@ private fun TransactionsView(
         }
         val grouped = remember(tx) { tx.groupBy { it.message.address } }
         LazyColumn(Modifier.fillMaxSize()) {
+            // «Maybe transactional» suggestions — confirm to move them in.
+            if (state.maybeTransactions.isNotEmpty()) {
+                item(key = "maybe_header") {
+                    Text(
+                        stringResource(R.string.tx_maybe_header),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
+                items(state.maybeTransactions, key = { "m" + it.id }) { item ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            item.message.body,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(onClick = { onFeedback(item, true) }) {
+                            Text(stringResource(R.string.feedback_is_tx))
+                        }
+                    }
+                }
+            }
             grouped.forEach { (sender, items_) ->
                 stickyHeader {
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
@@ -352,19 +427,49 @@ private fun TransactionsView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(item.message.address, style = MaterialTheme.typography.titleSmall)
+                            if (item.suspicious) {
+                                Text(
+                                    stringResource(R.string.tx_suspicious_warning),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            Text(item.bankName ?: item.message.address, style = MaterialTheme.typography.titleSmall)
                             Text(
                                 item.message.body,
                                 style = MaterialTheme.typography.bodySmall,
-                                maxLines = 2,
+                                maxLines = 3,
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            item.balanceRials?.let {
+                                Text(
+                                    stringResource(R.string.tx_balance_label, formatAmount(it, digits)),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Text(
                                 JalaliDate.formatDayHeader(item.message.date, calendar, digits),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            // OTP copy button + feedback actions
+                            val otp = if (item.subtype == BankTxParser.TxSubtype.OTP)
+                                BankTxParser.extractOtp(item.message.body) else null
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (otp != null) {
+                                    TextButton(onClick = {
+                                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(otp))
+                                    }) { Text(stringResource(R.string.copy_otp)) }
+                                }
+                                TextButton(onClick = { onFeedback(item, true) }) {
+                                    Text(stringResource(R.string.feedback_is_tx), style = MaterialTheme.typography.labelSmall)
+                                }
+                                TextButton(onClick = { onFeedback(item, false) }) {
+                                    Text(stringResource(R.string.feedback_not_tx), style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
@@ -380,7 +485,9 @@ private fun TransactionsView(
                             item.amountRials?.let {
                                 Text(
                                     formatAmount(it, digits),
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (item.direction == BankTxParser.Direction.DEPOSIT)
+                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                                 )
                             }
                         }

@@ -50,7 +50,7 @@ abstract class DataModule {
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context): MessageAppDatabase =
             Room.databaseBuilder(context, MessageAppDatabase::class.java, "message-app.db")
-                .addMigrations(MessageAppDatabase.MIGRATION_1_2)
+                .addMigrations(MessageAppDatabase.MIGRATION_1_2, MessageAppDatabase.MIGRATION_2_3)
                 .fallbackToDestructiveMigration()
                 .build()
 
@@ -60,5 +60,6 @@ abstract class DataModule {
         @Provides fun senderRuleDao(db: MessageAppDatabase) = db.senderRuleDao()
         @Provides fun moveLogDao(db: MessageAppDatabase) = db.moveLogDao()
         @Provides fun nbDao(db: MessageAppDatabase) = db.nbDao()
+        @Provides fun customBankPatternDao(db: MessageAppDatabase) = db.customBankPatternDao()
     }
 }

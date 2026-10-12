@@ -14,6 +14,8 @@ import com.sirmrm.messageapp.data.db.MessageDao
 import com.sirmrm.messageapp.data.db.NbDao
 import com.sirmrm.messageapp.data.db.NbMetaEntity
 import com.sirmrm.messageapp.data.db.NbTokenEntity
+import com.sirmrm.messageapp.classifier.BankingPatterns
+import com.sirmrm.messageapp.data.db.CustomBankPatternDao
 import com.sirmrm.messageapp.data.db.SenderRuleDao
 import com.sirmrm.messageapp.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,6 +44,7 @@ class ClassifierManager @Inject constructor(
     private val messageDao: MessageDao,
     private val conversationDao: ConversationDao,
     private val contactsResolver: ContactsResolver,
+    private val customBankPatternDao: CustomBankPatternDao,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -67,7 +70,8 @@ class ClassifierManager @Inject constructor(
             serviceSenderPatterns = patterns,
         )
 
-        val c = SmsClassifier(config)
+        val bankingPatterns = loadBankingPatterns()
+        val c = SmsClassifier(config, bankingPatterns = bankingPatterns)
         val meta = nbDao.meta()
         val tokens = nbDao.allTokens()
         if (meta != null || tokens.isNotEmpty()) {
@@ -93,9 +97,38 @@ class ClassifierManager @Inject constructor(
             senderRule = rule?.let {
                 if (it.alwaysPromo) SenderRule.ALWAYS_PROMO else SenderRule.NEVER_PROMO
             },
+            knownBankSender = isLearnedBankSender(address),
+            customBankSender = isCustomBankSender(address),
         )
         return classifier.classify(input)
     }
+
+    /** Loads the versioned bank patterns JSON from app assets. */
+    private fun loadBankingPatterns(): BankingPatterns = runCatching {
+        context.assets.open("patterns/banking_fa.json")
+            .bufferedReader().use { it.readText() }
+    }.mapCatching { BankingPatterns.load(it) }
+        .getOrElse { BankingPatterns.fallback() }
+
+    /**
+     * Auto-learned bank senders: an address that already produced at least
+     * `learned_sender_min_structured_messages` transactional messages counts
+     * as a trusted bank sender for future scoring (weight, not a decision).
+     */
+    private suspend fun isLearnedBankSender(address: String): Boolean = runCatching {
+        val normalized = normalizeAddress(address)
+        messageDao.transactionalSenders()
+            .firstOrNull { normalizeAddress(it.address) == normalized }
+            ?.let { it.cnt >= 3 } ?: false
+    }.getOrDefault(false)
+
+    private suspend fun isCustomBankSender(address: String): Boolean = runCatching {
+        val normalized = normalizeAddress(address)
+        customBankPatternDao.all().any { e ->
+            runCatching { Regex(e.pattern).containsMatchIn(normalized) }
+                .getOrElse { normalized.contains(e.pattern) }
+        }
+    }.getOrDefault(false)
 
     /**
      * Classifies every message still marked UNKNOWN (e.g. freshly imported
@@ -116,6 +149,12 @@ class ClassifierManager @Inject constructor(
                     category = result.category.name,
                     promoScore = result.score,
                     reasonCodes = result.reasons.joinToString(";") { it.code },
+                    txSubtype = result.bank?.subtype?.name,
+                    txAmountRials = result.bank?.amountRials,
+                    txBalanceRials = result.bank?.balanceRials,
+                    bankName = result.bank?.bankName,
+                    suspicious = result.suspicious,
+                    maybeTransactional = result.maybeTransactional,
                 )
             )
             conversationDao.get(m.threadId)?.let { conv ->

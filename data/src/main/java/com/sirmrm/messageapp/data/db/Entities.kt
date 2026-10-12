@@ -45,12 +45,29 @@ data class MessageEntity(
     /** Reason codes joined with ';'. */
     val reasonCodes: String,
     val deletedAt: Long?,
+    /** Bank verdict: subtype code (DEPOSIT/WITHDRAWAL/OTP/...), or null. */
+    val txSubtype: String?,
+    val txAmountRials: Long?,
+    val txBalanceRials: Long?,
+    val bankName: String?,
+    /** Bank-imitating phishing cues — show a red warning, never transactional. */
+    val suspicious: Boolean,
+    /** Borderline bank score — kept in inbox with a «maybe transactional» badge. */
+    val maybeTransactional: Boolean,
 )
 
 @Entity(tableName = "user_folders")
 data class UserFolderEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
+    val createdAt: Long,
+)
+
+@Entity(tableName = "custom_bank_patterns")
+data class CustomBankPatternEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Sender fragment or regex the user added in Settings. */
+    val pattern: String,
     val createdAt: Long,
 )
 

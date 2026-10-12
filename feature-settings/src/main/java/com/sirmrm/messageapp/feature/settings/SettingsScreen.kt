@@ -168,6 +168,10 @@ fun SettingsScreen(
                 }
             }
             item { SenderPatternsEditor(viewModel, s.serviceSenderPatterns) }
+            item {
+                val bankPatterns = viewModel.bankPatterns.collectAsState().value
+                BankPatternsEditor(viewModel, bankPatterns)
+            }
 
             item { SectionHeader(stringResource(R.string.section_privacy)) }
             item {
@@ -302,6 +306,54 @@ private fun BlockedSendersEditor(viewModel: SettingsViewModel, blocked: Set<Stri
                 IconButton(onClick = { viewModel.unblockSender(b) }) {
                     Icon(Icons.Default.Delete, null)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BankPatternsEditor(
+    viewModel: SettingsViewModel,
+    patterns: List<com.sirmrm.messageapp.data.db.CustomBankPatternEntity>,
+) {
+    var input by remember { mutableStateOf("") }
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            stringResource(R.string.setting_bank_patterns),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            stringResource(R.string.setting_bank_patterns_sub),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = input,
+                onValueChange = { input = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("30003305") },
+                singleLine = true,
+            )
+            TextButton(
+                onClick = {
+                    if (input.isNotBlank()) {
+                        viewModel.addBankPattern(input.trim())
+                        input = ""
+                    }
+                }
+            ) { Text(stringResource(R.string.action_add)) }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row {
+            for (p in patterns) {
+                FilterChip(
+                    selected = false,
+                    onClick = { viewModel.removeBankPattern(p.id) },
+                    label = { Text(p.pattern) },
+                    modifier = Modifier.padding(end = 4.dp),
+                )
             }
         }
     }

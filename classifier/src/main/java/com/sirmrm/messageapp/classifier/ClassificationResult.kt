@@ -29,6 +29,12 @@ data class ClassificationResult(
     val category: SmsCategory,
     val decision: Decision,
     val reasons: List<Reason>,
+    /** Bank-verdict details when the message evaluated as bank-ish. */
+    val bank: BankTxParser.Verdict? = null,
+    /** Bank-imitating phishing cues — never transactional, show red warning. */
+    val suspicious: Boolean = false,
+    /** Borderline bank score — keep in inbox with a «maybe transactional» badge. */
+    val maybeTransactional: Boolean = false,
 ) {
     val isPromo: Boolean get() = category == SmsCategory.PROMO
 }

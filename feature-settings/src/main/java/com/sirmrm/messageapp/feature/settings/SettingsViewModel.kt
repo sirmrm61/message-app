@@ -7,6 +7,8 @@ import com.sirmrm.messageapp.domain.model.AppSettings
 import com.sirmrm.messageapp.domain.model.CalendarMode
 import com.sirmrm.messageapp.domain.model.DigitStyle
 import com.sirmrm.messageapp.domain.model.ThemeMode
+import com.sirmrm.messageapp.data.db.CustomBankPatternDao
+import com.sirmrm.messageapp.data.db.CustomBankPatternEntity
 import com.sirmrm.messageapp.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -18,7 +20,20 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val customBankPatternDao: CustomBankPatternDao,
 ) : ViewModel() {
+
+    /** User-defined bank sender patterns (added in Settings, used at classify time). */
+    val bankPatterns: StateFlow<List<CustomBankPatternEntity>> =
+        customBankPatternDao.observeAll()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addBankPattern(pattern: String) = viewModelScope.launch {
+        customBankPatternDao.insert(CustomBankPatternEntity(pattern = pattern, createdAt = System.currentTimeMillis()))
+    }
+    fun removeBankPattern(id: Long) = viewModelScope.launch {
+        customBankPatternDao.delete(id)
+    }
 
     val settings: StateFlow<AppSettings?> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

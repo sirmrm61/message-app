@@ -24,4 +24,6 @@
     <string name="setting_blocked">فرستنده‌های مسدود</string>
     <string name="action_add">افزودن</string>
     <string name="action_block">مسدودسازی</string>
+    <string name="setting_bank_patterns">سرشماره‌های بانکی سفارشی</string>
+    <string name="setting_bank_patterns_sub">الگو یا سرشماره بانک خود را اضافه کنید؛ پیام‌های این فرستنده‌ها وزن تراکنشی بیشتری می‌گیرند</string>
 </resources>

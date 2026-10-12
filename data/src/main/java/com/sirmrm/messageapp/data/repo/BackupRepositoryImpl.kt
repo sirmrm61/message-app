@@ -42,6 +42,8 @@ class BackupRepositoryImpl @Inject constructor(
                 promoScore = 0f,
                 reasonCodes = "",
                 deletedAt = null,
+                txSubtype = null, txAmountRials = null, txBalanceRials = null,
+                bankName = null, suspicious = false, maybeTransactional = false,
             )
         }
         messageDao.upsertAll(entities)

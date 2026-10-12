@@ -119,6 +119,16 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE category = 'TRANSACTIONAL' ORDER BY date DESC, id DESC")
     fun observeTransactional(): Flow<List<MessageEntity>>
 
+    /** Borderline bank-score messages kept in the inbox («maybe transactional»). */
+    @Query("SELECT * FROM messages WHERE maybeTransactional = 1 AND folder != 'TRASH' ORDER BY date DESC, id DESC")
+    fun observeMaybeTransactional(): Flow<List<MessageEntity>>
+
+    /** Senders with their transactional-message count (auto-learn bank ids). */
+    @Query("SELECT address, COUNT(*) AS cnt FROM messages WHERE category = 'TRANSACTIONAL' GROUP BY address")
+    suspend fun transactionalSenders(): List<SenderCount>
+
+    data class SenderCount(val address: String, val cnt: Int)
+
     @Query("SELECT * FROM messages")
     suspend fun exportAll(): List<MessageEntity>
 
@@ -177,4 +187,19 @@ interface NbDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertMeta(meta: NbMetaEntity)
+}
+
+@Dao
+interface CustomBankPatternDao {
+    @Query("SELECT * FROM custom_bank_patterns ORDER BY createdAt")
+    fun observeAll(): kotlinx.coroutines.flow.Flow<List<CustomBankPatternEntity>>
+
+    @Query("SELECT * FROM custom_bank_patterns")
+    suspend fun all(): List<CustomBankPatternEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entity: CustomBankPatternEntity): Long
+
+    @Query("DELETE FROM custom_bank_patterns WHERE id = :id")
+    suspend fun delete(id: Long)
 }

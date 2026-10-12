@@ -39,6 +39,12 @@ data class ConversationsUiState(
     val transactions: List<BankTxItem> = emptyList(),
     val txSelection: Set<Long> = emptySet(),
     val filterDate: Long? = null,
+    /** Subtype chip currently filtering the transactions tab (null = all). */
+    val txSubtypeFilter: BankTxParser.TxSubtype? = null,
+    /** Inbox messages scored as possible bank SMS — shown as suggestions. */
+    val maybeTransactions: List<BankTxItem> = emptyList(),
+    /** Show the optional monthly deposit/withdrawal summary. */
+    val showMonthlySums: Boolean = false,
 ) {
     val selectionMode: Boolean get() = selection.isNotEmpty()
     val txSelectionMode: Boolean get() = txSelection.isNotEmpty()
@@ -49,15 +55,39 @@ data class ConversationsUiState(
     fun selectedSum(dir: BankTxParser.Direction): Long = transactions
         .filter { it.id in txSelection && it.direction == dir }
         .sumOf { it.amountRials ?: 0L }
+
+    /** Deposit/withdrawal totals for the Jalali month of `day`. */
+    fun monthlySums(day: Long): Pair<Long, Long> {
+        var dep = 0L; var wdr = 0L
+        for (t in transactions) {
+            val d = com.sirmrm.messageapp.core.util.JalaliDate.gregorianToJalali(t.message.date)
+            val ref = com.sirmrm.messageapp.core.util.JalaliDate.gregorianToJalali(day)
+            if (d.year == ref.year && d.month == ref.month) {
+                val amt = t.amountRials ?: continue
+                if (t.direction == BankTxParser.Direction.DEPOSIT) dep += amt
+                else if (t.direction == BankTxParser.Direction.WITHDRAWAL) wdr += amt
+            }
+        }
+        return dep to wdr
+    }
 }
 
-/** A transactional message enriched with its parsed bank record. */
+/** A transactional message enriched with its stored bank verdict. */
 data class BankTxItem(
     val id: Long,
     val message: SmsMessage,
     val direction: BankTxParser.Direction,
     val amountRials: Long?,
-)
+    val subtype: BankTxParser.TxSubtype = BankTxParser.TxSubtype.UNKNOWN,
+    val balanceRials: Long? = null,
+    val bankName: String? = null,
+    val suspicious: Boolean = false,
+) {
+    /** OTP message received within the last 3 minutes — pinned to the top. */
+    val isRecentOtp: Boolean
+        get() = subtype == BankTxParser.TxSubtype.OTP &&
+            System.currentTimeMillis() - message.date < 3 * 60_000
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -65,7 +95,7 @@ class ConversationsViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     private val messageRepository: MessageRepository,
     private val settingsRepository: SettingsRepository,
-    classifierManager: ClassifierManager,
+    private val classifierManager: ClassifierManager,
     messageDao: MessageDao,
 ) : ViewModel() {
 
@@ -81,13 +111,29 @@ class ConversationsViewModel @Inject constructor(
     private val txSelection = MutableStateFlow<Set<Long>>(emptySet())
     private val filterDate = MutableStateFlow<Long?>(null)
 
+    private val txSubtypeFilter = MutableStateFlow<BankTxParser.TxSubtype?>(null)
+    private val showMonthlySums = MutableStateFlow(false)
+
     private val transactions = messageDao.observeTransactional().map { list ->
         list.mapNotNull { e ->
             runCatching {
                 val m = e.toDomain()
-                BankTxParser.parse(m.body)?.let { tx ->
-                    BankTxItem(m.id, m, tx.direction, tx.amountRials)
-                }
+                // Prefer the verdict stored at classification time; fall back
+                // to a fresh parse for rows written by older versions.
+                val storedSubtype = runCatching { BankTxParser.TxSubtype.valueOf(m.txSubtype ?: "") }
+                    .getOrDefault(BankTxParser.TxSubtype.UNKNOWN)
+                val parsed = BankTxParser.parse(m.body)
+                if (storedSubtype == BankTxParser.TxSubtype.UNKNOWN && parsed == null) return@runCatching null
+                BankTxItem(
+                    id = m.id,
+                    message = m,
+                    direction = parsed?.direction ?: BankTxParser.Direction.UNKNOWN,
+                    amountRials = m.txAmountRials ?: parsed?.amountRials,
+                    subtype = storedSubtype,
+                    balanceRials = m.txBalanceRials,
+                    bankName = m.bankName,
+                    suspicious = m.suspicious,
+                )
             }.getOrNull()
         }
     }.flowOn(Dispatchers.Default)
@@ -100,9 +146,34 @@ class ConversationsViewModel @Inject constructor(
         else list.filter { com.sirmrm.messageapp.core.util.JalaliDate.sameDay(it.lastMessageDate, day) }
     }
 
+    private val maybeTransactions = messageDao.observeMaybeTransactional().map { list ->
+        list.mapNotNull { e ->
+            runCatching {
+                val m = e.toDomain()
+                val parsed = BankTxParser.parse(m.body)
+                BankTxItem(
+                    id = m.id, message = m,
+                    direction = parsed?.direction ?: BankTxParser.Direction.UNKNOWN,
+                    amountRials = m.txAmountRials ?: parsed?.amountRials,
+                    subtype = runCatching { BankTxParser.TxSubtype.valueOf(m.txSubtype ?: "") }
+                        .getOrDefault(BankTxParser.TxSubtype.UNKNOWN),
+                    balanceRials = m.txBalanceRials,
+                    bankName = m.bankName,
+                )
+            }.getOrNull()
+        }
+    }.flowOn(Dispatchers.Default)
+
+    private val filteredTransactions = combine(transactions, txSubtypeFilter) { list, sub ->
+        val filtered = if (sub == null) list else list.filter { it.subtype == sub }
+        // OTP codes younger than 3 minutes stay pinned on top.
+        filtered.sortedWith(compareByDescending<BankTxItem> { it.isRecentOtp }.thenByDescending { it.message.date })
+    }
+
     val state: StateFlow<ConversationsUiState> = combine(
         filteredConversations, settingsRepository.settings, folder, query, selection,
-        transactions, txSelection, filterDate,
+        filteredTransactions, txSelection, filterDate, txSubtypeFilter, showMonthlySums,
+        maybeTransactions,
     ) { arr ->
         @Suppress("UNCHECKED_CAST")
         ConversationsUiState(
@@ -115,8 +186,14 @@ class ConversationsViewModel @Inject constructor(
             transactions = arr[5] as List<BankTxItem>,
             txSelection = arr[6] as Set<Long>,
             filterDate = arr[7] as Long?,
+            txSubtypeFilter = arr[8] as BankTxParser.TxSubtype?,
+            showMonthlySums = arr[9] as Boolean,
+            maybeTransactions = arr[10] as List<BankTxItem>,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConversationsUiState())
+
+    fun setTxSubtypeFilter(sub: BankTxParser.TxSubtype?) { txSubtypeFilter.value = sub }
+    fun toggleMonthlySums() { showMonthlySums.update { !it } }
 
     fun setFilterDate(ts: Long?) { filterDate.value = ts }
 
@@ -164,6 +241,18 @@ class ConversationsViewModel @Inject constructor(
 
     fun selectAllTx() {
         txSelection.value = transactionsCached().map { it.id }.toSet()
+    }
+
+    /**
+     * User feedback «this is/isn't transactional»: moves the message and
+     * feeds the incremental learner so similar messages score better/worse.
+     */
+    fun feedbackTransactional(item: BankTxItem, isTx: Boolean) = viewModelScope.launch {
+        messageRepository.moveMessage(
+            item.id,
+            if (isTx) MessageFolder.TRANSACTIONAL else MessageFolder.INBOX,
+        )
+        runCatching { classifierManager.learn(item.message.address, item.message.body, isPromo = !isTx) }
     }
 
     private fun transactionsCached(): List<BankTxItem> = state.value.transactions

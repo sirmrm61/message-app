@@ -14,6 +14,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.orgjson)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

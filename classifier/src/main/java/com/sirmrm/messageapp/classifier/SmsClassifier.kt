@@ -17,8 +17,15 @@ package com.sirmrm.messageapp.classifier
 class SmsClassifier(
     private val config: ClassifierConfig = ClassifierConfig(),
     private val learner: NaiveBayesLearner = NaiveBayesLearner(),
+    bankingPatterns: BankingPatterns? = null,
 ) {
     private val rules = RuleEngine(config)
+
+    init {
+        // One global pattern set for the process — loaded from the
+        // versioned banking_fa.json asset by the data layer.
+        if (bankingPatterns != null) BankTxParser.patterns = bankingPatterns
+    }
 
     /** Weight of the learned model once it has enough samples. */
     private fun learnerWeight(): Float =
@@ -28,7 +35,19 @@ class SmsClassifier(
         val outcome = rules.evaluate(input)
 
         if (outcome.protected) {
-            return ClassificationResult(0f, outcome.category, Decision.PROTECTED, outcome.reasons)
+            return ClassificationResult(
+                0f, outcome.category, Decision.PROTECTED, outcome.reasons,
+                bank = outcome.bank,
+            )
+        }
+
+        // Phishing-looking messages are kept out of transactional AND out of
+        // promo-auto-move: they stay in the inbox with a red warning.
+        if (outcome.suspicious) {
+            return ClassificationResult(
+                0f, SmsCategory.UNKNOWN, Decision.KEEP, outcome.reasons,
+                bank = outcome.bank, suspicious = true,
+            )
         }
 
         val nbProb = learner.promoProbability(input.body)
@@ -57,7 +76,11 @@ class SmsClassifier(
             reasons += Reason("model", "مدل یادگیرنده مشابه پیام‌های تبلیغاتی قبلی", "Similar to promos you marked before")
         }
 
-        return ClassificationResult(combined, category, decision, reasons)
+        return ClassificationResult(
+            combined, category, decision, reasons,
+            bank = outcome.bank,
+            maybeTransactional = outcome.maybeTransactional,
+        )
     }
 
     /** Learn from explicit user feedback. */

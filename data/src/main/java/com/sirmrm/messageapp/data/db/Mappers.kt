@@ -50,6 +50,12 @@ fun MessageEntity.toDomain() = SmsMessage(
     promoScore = promoScore,
     reasonCodes = if (reasonCodes.isBlank()) emptyList() else reasonCodes.split(';'),
     deletedAt = deletedAt,
+    txSubtype = txSubtype,
+    txAmountRials = txAmountRials,
+    txBalanceRials = txBalanceRials,
+    bankName = bankName,
+    suspicious = suspicious,
+    maybeTransactional = maybeTransactional,
 )
 
 fun SmsMessage.toEntity() = MessageEntity(
@@ -68,6 +74,12 @@ fun SmsMessage.toEntity() = MessageEntity(
     promoScore = promoScore,
     reasonCodes = reasonCodes.joinToString(";"),
     deletedAt = deletedAt,
+    txSubtype = txSubtype,
+    txAmountRials = txAmountRials,
+    txBalanceRials = txBalanceRials,
+    bankName = bankName,
+    suspicious = suspicious,
+    maybeTransactional = maybeTransactional,
 )
 
 fun UserFolderEntity.toDomain() = UserFolder(id = id, name = name, createdAt = createdAt)

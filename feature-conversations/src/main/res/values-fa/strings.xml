@@ -32,4 +32,18 @@
     <string name="rial_unit">ریال</string>
     <string name="crash_title">گزارش آخرین خطا</string>
     <string name="action_select_all">انتخاب همه</string>
+    <string name="tx_monthly">ماهانه</string>
+    <string name="tx_monthly_sums">جمع ماه: واریز %1$s • برداشت %2$s</string>
+    <string name="tx_filter_all">همه</string>
+    <string name="tx_purchase">خرید و پرداخت</string>
+    <string name="tx_otp">رمز یکبارمصرف</string>
+    <string name="tx_cheque">چک</string>
+    <string name="tx_loan">وام و قسط</string>
+    <string name="tx_security">امنیتی</string>
+    <string name="tx_suspicious_warning">⚠ مشکوک — به پیامک‌های بانکی شباهت دارد، لینک‌ها را باز نکنید</string>
+    <string name="tx_balance_label">مانده: %1$s</string>
+    <string name="copy_otp">کپی رمز</string>
+    <string name="feedback_is_tx">تراکنشی است</string>
+    <string name="feedback_not_tx">تراکنشی نیست</string>
+    <string name="tx_maybe_header">شاید تراکنشی — برای تأیید لمس کنید</string>
 </resources>

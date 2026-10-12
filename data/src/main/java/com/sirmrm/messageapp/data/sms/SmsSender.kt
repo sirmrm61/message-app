@@ -88,6 +88,8 @@ class SmsSender @Inject constructor(
                         promoScore = 0f,
                         reasonCodes = "",
                         deletedAt = null,
+                        txSubtype = null, txAmountRials = null, txBalanceRials = null,
+                        bankName = null, suspicious = false, maybeTransactional = false,
                     )
                 )
                 conversationDao.updateForNewMessage(threadId, body.take(140), now, 0, 0f, false)

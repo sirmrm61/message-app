@@ -24,4 +24,6 @@
     <string name="setting_blocked">Blocked senders</string>
     <string name="action_add">Add</string>
     <string name="action_block">Block</string>
+    <string name="setting_bank_patterns">Custom bank senders</string>
+    <string name="setting_bank_patterns_sub">Add a bank sender id or pattern; messages from these get extra transactional weight</string>
 </resources>

@@ -32,4 +32,18 @@
     <string name="rial_unit">IRR</string>
     <string name="crash_title">Last crash report</string>
     <string name="action_select_all">Select all</string>
+    <string name="tx_monthly">Monthly</string>
+    <string name="tx_monthly_sums">This month: +%1$s • −%2$s</string>
+    <string name="tx_filter_all">All</string>
+    <string name="tx_purchase">Purchase</string>
+    <string name="tx_otp">OTP</string>
+    <string name="tx_cheque">Cheque</string>
+    <string name="tx_loan">Loan</string>
+    <string name="tx_security">Security</string>
+    <string name="tx_suspicious_warning">⚠ Suspicious — imitates a bank message, do not open links</string>
+    <string name="tx_balance_label">Balance: %1$s</string>
+    <string name="copy_otp">Copy code</string>
+    <string name="feedback_is_tx">Is transactional</string>
+    <string name="feedback_not_tx">Not transactional</string>
+    <string name="tx_maybe_header">Maybe transactional — tap to confirm</string>
 </resources>

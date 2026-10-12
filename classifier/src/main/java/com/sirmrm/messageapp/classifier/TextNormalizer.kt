@@ -54,6 +54,9 @@ object TextNormalizer {
                 persianIdx >= 0 -> b.append('0' + persianIdx)
                 arabicIdx >= 0 -> b.append('0' + arabicIdx)
                 c.isDigit() -> b.append(c)
+                // Alphabetic sender ids exist too (e.g. "BankMeli"): keep
+                // latin letters so bank-name senders can be matched.
+                c in 'a'..'z' || c in 'A'..'Z' -> b.append(c.lowercaseChar())
             }
         }
         var s = b.toString()

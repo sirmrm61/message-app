@@ -18,6 +18,9 @@ internal class RuleEngine(private val config: ClassifierConfig) {
         val score: Float,
         val protected: Boolean,
         val reasons: List<Reason>,
+        val bank: BankTxParser.Verdict? = null,
+        val suspicious: Boolean = false,
+        val maybeTransactional: Boolean = false,
     )
 
     private data class Signal(
@@ -49,19 +52,33 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             listOf(Reason("contact", "فرستنده در مخاطبان شماست", "Sender is in your contacts")),
         )
 
-        // 3 — protected classes first: OTP, then bank transactions.
-        // Bank formats outrank the conversation whitelist: replying once to a
-        // bank thread must not turn later bank SMS into "personal".
+        // 3 — bank scorer first: it also detects bank-imitating phishing,
+        // which must be evaluated BEFORE the OTP shortcut so a fake OTP is
+        // flagged suspicious instead of being protected.
+        val verdict = BankTxParser.evaluate(
+            text, sender,
+            knownBankSenders = if (input.knownBankSender) setOf(sender) else emptySet(),
+            customBankSenders = if (input.customBankSender) listOf(sender) else emptyList(),
+        )
+        if (verdict.suspicious) {
+            return RuleOutcome(
+                SmsCategory.UNKNOWN, 0f, false,
+                listOf(Reason("phishing", "مشکوک — شباهت به پیام فیشینگ بانکی", "Suspicious — resembles bank phishing")),
+                verdict, suspicious = true,
+            )
+        }
+
+        // Protected classes: OTP, then bank transactions.
         val otpReasons = matchAny(text, OTP_PATTERNS)
         if (otpReasons.isNotEmpty()) {
-            return RuleOutcome(SmsCategory.OTP, 0f, true, otpReasons)
+            return RuleOutcome(SmsCategory.OTP, 0f, true, otpReasons, verdict)
         }
-        val transactionalReasons = matchAny(text, TRANSACTIONAL_PATTERNS).toMutableList()
-        if (transactionalReasons.isEmpty() && BankTxParser.isBankMessage(text)) {
-            transactionalReasons += Reason("bank_format", "قالب پیامک بانکی", "Bank SMS format")
-        }
-        if (transactionalReasons.isNotEmpty()) {
-            return RuleOutcome(SmsCategory.TRANSACTIONAL, 0f, true, transactionalReasons)
+
+        if (verdict.isTransactional) {
+            val reasons = verdict.reasons.map {
+                Reason("bank_$it", "پیامک بانکی/مالی", "Bank / financial message")
+            } + Reason("bank_score", "امتیاز بانکی ${"%.2f".format(verdict.score)}", "Bank score ${"%.2f".format(verdict.score)}")
+            return RuleOutcome(SmsCategory.TRANSACTIONAL, 0f, true, reasons, verdict)
         }
 
         if (input.hasConversation) return RuleOutcome(
@@ -102,7 +119,10 @@ internal class RuleEngine(private val config: ClassifierConfig) {
         }
 
         val category = if (score > 0f) SmsCategory.PROMO else SmsCategory.UNKNOWN
-        return RuleOutcome(category, score.coerceIn(0f, 1f), false, reasons)
+        return RuleOutcome(
+            category, score.coerceIn(0f, 1f), false, reasons,
+            bank = verdict, maybeTransactional = verdict.maybe,
+        )
     }
 
     private fun matchAny(text: String, table: List<Pair<Regex, Reason>>): List<Reason> =

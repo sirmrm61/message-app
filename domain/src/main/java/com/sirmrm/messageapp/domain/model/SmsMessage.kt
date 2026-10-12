@@ -32,6 +32,13 @@ data class SmsMessage(
     val promoScore: Float = 0f,
     /** Human-readable reason codes shown to the user. */
     val reasonCodes: List<String> = emptyList(),
+    /** Bank verdict details, when the message was scored bank-ish. */
+    val txSubtype: String? = null,
+    val txAmountRials: Long? = null,
+    val txBalanceRials: Long? = null,
+    val bankName: String? = null,
+    val suspicious: Boolean = false,
+    val maybeTransactional: Boolean = false,
     /** When the message was moved to trash (for the 30-day purge). */
     val deletedAt: Long? = null,
 ) {

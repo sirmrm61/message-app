@@ -20,4 +20,8 @@ data class SmsInput(
     val hasConversation: Boolean = false,
     /** Persisted per-sender override from user feedback, if any. */
     val senderRule: SenderRule? = null,
+    /** Sender previously produced ≥N bank-structured messages (auto-learned). */
+    val knownBankSender: Boolean = false,
+    /** Sender matches a user-added bank pattern from Settings. */
+    val customBankSender: Boolean = false,
 )

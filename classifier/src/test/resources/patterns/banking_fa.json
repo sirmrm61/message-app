@@ -1,0 +1,531 @@
+{
+  "version": 1,
+  "description_fa": "الگوهای تشخیص پیامک بانکی/مالی ایران — قابل ویرایش بدون انتشار نسخهٔ جدید",
+  "description_en": "Iranian bank/financial SMS detection patterns — editable without an app release",
+  "notes": "Patterns marked 'unverified': true were not taken from a real bank sample.",
+  "thresholds": {
+    "transactional": 0.5,
+    "maybe": 0.3,
+    "learned_sender_min_structured_messages": 3
+  },
+  "weights": {
+    "amount_signed": 0.25,
+    "amount_worded": 0.18,
+    "balance_word": 0.22,
+    "masked_card_or_account": 0.15,
+    "jalali_datetime": 0.1,
+    "ref_or_serial": 0.1,
+    "vocabulary_hit": 0.15,
+    "vocabulary_max": 0.45,
+    "known_bank_sender": 0.3,
+    "learned_bank_sender": 0.25,
+    "promo_signal_penalty": -0.5,
+    "promo_word_penalty": -0.1,
+    "promo_exempt_if_amount_and_balance": true,
+    "bank_name_in_text": 0.3,
+    "security_event_hit": 0.2
+  },
+  "banks": [
+    {
+      "id": "melli",
+      "fa": "بانک ملی",
+      "en": "Bank Melli",
+      "senders": [
+        "982000",
+        "BankMelli",
+        "melli"
+      ],
+      "keywords": [
+        "ملی",
+        "melli"
+      ]
+    },
+    {
+      "id": "mellat",
+      "fa": "بانک ملت",
+      "en": "Bank Mellat",
+      "senders": [
+        "30003305",
+        "9821000"
+      ],
+      "keywords": [
+        "ملت",
+        "mellat"
+      ]
+    },
+    {
+      "id": "saderat",
+      "fa": "بانک صادرات",
+      "en": "Bank Saderat",
+      "senders": [
+        "10000393",
+        "saderat"
+      ],
+      "keywords": [
+        "صادرات",
+        "saderat"
+      ]
+    },
+    {
+      "id": "tejarat",
+      "fa": "بانک تجارت",
+      "en": "Bank Tejarat",
+      "senders": [
+        "tejarat",
+        "9820002"
+      ],
+      "keywords": [
+        "تجارت",
+        "tejarat"
+      ]
+    },
+    {
+      "id": "sepah",
+      "fa": "بانک سپه",
+      "en": "Bank Sepah",
+      "senders": [
+        "sepah"
+      ],
+      "keywords": [
+        "سپه",
+        "sepah"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "maskan",
+      "fa": "بانک مسکن",
+      "en": "Bank Maskan",
+      "senders": [
+        "maskan"
+      ],
+      "keywords": [
+        "مسکن",
+        "maskan"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "keshavarzi",
+      "fa": "بانک کشاورزی",
+      "en": "Bank Keshavarzi",
+      "senders": [
+        "keshavarzi"
+      ],
+      "keywords": [
+        "کشاورزی",
+        "keshavarzi"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "parsian",
+      "fa": "بانک پارسیان",
+      "en": "Parsian Bank",
+      "senders": [
+        "parsian",
+        "2000883"
+      ],
+      "keywords": [
+        "پارسیان",
+        "parsian"
+      ]
+    },
+    {
+      "id": "pasargad",
+      "fa": "بانک پاسارگاد",
+      "en": "Bank Pasargad",
+      "senders": [
+        "pasargad",
+        "20006677"
+      ],
+      "keywords": [
+        "پاسارگاد",
+        "pasargad"
+      ]
+    },
+    {
+      "id": "saman",
+      "fa": "بانک سامان",
+      "en": "Saman Bank",
+      "senders": [
+        "saman",
+        "30006767"
+      ],
+      "keywords": [
+        "سامان",
+        "saman"
+      ]
+    },
+    {
+      "id": "eghtesadnovin",
+      "fa": "بانک اقتصاد نوین",
+      "en": "Eghtesad Novin",
+      "senders": [
+        "eghtesadnovin",
+        "enbank"
+      ],
+      "keywords": [
+        "اقتصاد نوین",
+        "eghtesad"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "postbank",
+      "fa": "پست بانک",
+      "en": "Post Bank",
+      "senders": [
+        "postbank"
+      ],
+      "keywords": [
+        "پست بانک",
+        "post bank"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "refah",
+      "fa": "بانک رفاه",
+      "en": "Bank Refah",
+      "senders": [
+        "refah",
+        "3000555"
+      ],
+      "keywords": [
+        "رفاه",
+        "refah"
+      ]
+    },
+    {
+      "id": "ayandeh",
+      "fa": "بانک آینده",
+      "en": "Bank Ayandeh",
+      "senders": [
+        "30002957",
+        "ayandeh"
+      ],
+      "keywords": [
+        "آینده",
+        "ayandeh"
+      ]
+    },
+    {
+      "id": "shahr",
+      "fa": "بانک شهر",
+      "en": "Bank Shahr",
+      "senders": [
+        "shahr",
+        "30007000"
+      ],
+      "keywords": [
+        "شهر",
+        "shahr"
+      ]
+    },
+    {
+      "id": "sina",
+      "fa": "بانک سینا",
+      "en": "Sina Bank",
+      "senders": [
+        "sina"
+      ],
+      "keywords": [
+        "سینا",
+        "sina"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "dey",
+      "fa": "بانک دی",
+      "en": "Dey Bank",
+      "senders": [
+        "dey",
+        "30007272"
+      ],
+      "keywords": [
+        "دی",
+        "dey bank"
+      ]
+    },
+    {
+      "id": "iranzamin",
+      "fa": "بانک ایران زمین",
+      "en": "Iran Zamin Bank",
+      "senders": [
+        "30006905",
+        "iranzamin"
+      ],
+      "keywords": [
+        "ایران زمین",
+        "iranzamin"
+      ]
+    },
+    {
+      "id": "ansar",
+      "fa": "بانک انصار",
+      "en": "Bank Ansar",
+      "senders": [
+        "ansar"
+      ],
+      "keywords": [
+        "انصار",
+        "ansar"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "ghavamin",
+      "fa": "بانک قوامین",
+      "en": "Ghavamin Bank",
+      "senders": [
+        "ghavamin"
+      ],
+      "keywords": [
+        "قوامین",
+        "ghavamin"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "mehriran",
+      "fa": "بانک مهر ایران",
+      "en": "Mehr Iran Bank",
+      "senders": [
+        "mehriran"
+      ],
+      "keywords": [
+        "مهر ایران",
+        "mehr"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "tourism",
+      "fa": "بانک گردشگری",
+      "en": "Tourism Bank",
+      "senders": [
+        "tourism"
+      ],
+      "keywords": [
+        "گردشگری",
+        "tourism"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "tosee",
+      "fa": "بانک توسعه تعاون",
+      "en": "Tose'e Ta'avon",
+      "senders": [
+        "ttbank"
+      ],
+      "keywords": [
+        "توسعه تعاون",
+        "tosee"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "hekmat",
+      "fa": "بانک حکمت ایرانیان",
+      "en": "Hekmat Iranian",
+      "senders": [
+        "hekmat"
+      ],
+      "keywords": [
+        "حکمت",
+        "hekmat"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "resalat",
+      "fa": "بانک قرض‌الحسنه رسالت",
+      "en": "Resalat Bank",
+      "senders": [
+        "resalat"
+      ],
+      "keywords": [
+        "رسالت",
+        "resalat"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "khavarmianeh",
+      "fa": "بانک خاورمیانه",
+      "en": "Middle East Bank",
+      "senders": [
+        "mebank"
+      ],
+      "keywords": [
+        "خاورمیانه",
+        "middle east"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "sarmayeh",
+      "fa": "بانک سرمایه",
+      "en": "Sarmayeh Bank",
+      "senders": [
+        "sarmayeh"
+      ],
+      "keywords": [
+        "سرمایه",
+        "sarmayeh"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "taavon",
+      "fa": "بانک توسعه صادرات",
+      "en": "EDBI",
+      "senders": [
+        "edbi"
+      ],
+      "keywords": [
+        "توسعه صادرات",
+        "edbi"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "karafarin",
+      "fa": "بانک کارآفرین",
+      "en": "Karafarin Bank",
+      "senders": [
+        "karafarin"
+      ],
+      "keywords": [
+        "کارآفرین",
+        "karafarin"
+      ],
+      "unverified_senders": true
+    },
+    {
+      "id": "gardeshgari",
+      "fa": "موسسه اعتباری ملل",
+      "en": "Mellal Credit",
+      "senders": [
+        "mellal"
+      ],
+      "keywords": [
+        "ملل",
+        "mellal"
+      ],
+      "unverified": true,
+      "unverified_senders": true
+    }
+  ],
+  "structure": {
+    "amount_signed": "[+\\-−]\\s*\\d[\\d,٬،\\s]*\\d\\s*(ريال|ریال|تومان|تومن|irr|toman)?",
+    "amount_any": "\\d[\\d,٬،\\s]{0,14}\\d\\s*(ريال|ریال|تومان|تومن|irr|toman|rial)",
+    "balance": "مانده\\s*(حساب|کارت|مبلغ|قسط|ریال|تومان|[:؛=\\-]|\\d)|باقیمانده|موجودي\\s*(حساب|کارت|مبلغ|[:؛=\\-]|\\d)?|موجودی\\s*(حساب|کارت|مبلغ|[:؛=\\-]|\\d)?|balance",
+    "masked_card_or_account": "حساب\\s*[:#]?\\s*[\\d*\\s]{3,}|کارت\\s*[\\d*\\s]{4,}|شماره\\s*کارت|شبا\\s*[:#]?\\s*ir\\d|\\*+\\s*\\d{3,4}|\\d{4}\\s*\\*+",
+    "jalali_datetime": "14\\d\\d[/\\-.]\\d{1,2}[/\\-.]\\d{1,2}|\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]14\\d\\d|ساعت\\s*\\d{1,2}[:\\d]*",
+    "ref_or_serial": "کد\\s*(پیگیری|رهگیری|مرجع|رصد)|شماره\\s*(پیگیری|مرجع|سری|سریال|حواله|تراکنش)|ref(erence)?\\s*[:#]?\\s*\\d|پیگیری\\s*[:#]?\\s*\\d{4,}|سریال\\s*[:#]?\\s*\\d",
+    "otp_code": "رمز\\s*(دوم\\s*)?پویا|رمز\\s*(یک\\s*بار|یکبار)\\s*مصرف|کد\\s*(تایید|تأیید|فعال\\s*سازی|ورود|احراز|امنیتی)|otp",
+    "security_event": "ورود به اینترنت\\s*بانک|ورود به همراه\\s*بانک|تغییر رمز|فعال.?سازی|رمز دوم|خروج موفق|غیرفعال شد|کاربر جدید"
+  },
+  "vocabulary": {
+    "deposit": [
+      "واريز",
+      "واریز",
+      "افزایش موجودی",
+      "افزایش اعتبار",
+      "deposit",
+      "credit"
+    ],
+    "withdrawal": [
+      "برداشت",
+      "کسر از",
+      "خروج وجه",
+      "debit",
+      "withdraw"
+    ],
+    "purchase_payment": [
+      "خرید موفق",
+      "خرید مبلغ",
+      "خرید کارت",
+      "خرید از حساب",
+      "خرید:",
+      "پرداخت موفق",
+      "پرداخت مبلغ",
+      "purchase",
+      "payment"
+    ],
+    "transfer": [
+      "انتقال",
+      "حواله",
+      "کارت به کارت",
+      "کارت‌به‌کارت",
+      "ساتنا",
+      "پایا",
+      "شتاب",
+      "پل",
+      "حواله اینترنتی"
+    ],
+    "bill_charge": [
+      "قبض",
+      "شارژ حساب",
+      "شارژ موفق",
+      "کارمزد"
+    ],
+    "loan": [
+      "تسهیلات",
+      "وام",
+      "قسط",
+      "اقساط",
+      "سررسید",
+      "سود تسهیلات"
+    ],
+    "cheque": [
+      "چک صیادی",
+      "برگشت چک",
+      "وصول چک",
+      "برداشت چک",
+      "صیاد",
+      "چک"
+    ],
+    "otp": [
+      "رمز پویا",
+      "رمز یکبارمصرف",
+      "رمز یک بار مصرف",
+      "رمز دوم",
+      "کد تایید",
+      "کد تأیید",
+      "otp"
+    ],
+    "security": [
+      "ورود به اینترنت بانک",
+      "ورود به اینترنت‌بانک",
+      "تغییر رمز",
+      "فعال‌سازی همراه‌بانک",
+      "فعال سازی همراه بانک",
+      "رمز را به کسی ندهید",
+      "هشدار امنیتی"
+    ],
+    "info": [
+      "گردش",
+      "مسدود",
+      "اطلاع رسانی حساب",
+      "مانده حساب",
+      "مانده"
+    ]
+  },
+  "phishing_signals": {
+    "short_links": "bit\\.ly|tinyurl|t\\.co|goo\\.gl|is\\.gd|cutt\\.ly|shorte|lilnk|opizo|rb\\.gy|s2n\\.ir|b2n\\.ir|liink|lin\\.k|short\\.cm|tiny\\.cc",
+    "threat_or_prize_words": "مسدود شد|مسدود شدن|به روزرسانی|بروزرسانی|تعلیق|جایزه|برنده شدید|برنده شوید|قرعه کشی|قرعه‌کشی|تبریک! شما|فعال سازی فوری|تأیید اطلاعات|احراز هویت مجدد",
+    "bank_impersonation": "بانک|اینترنت بانک|همراه بانک|حساب شما|کارت شما|رمز شما|کد تایید|کد تأیید|موبایل بانک|bank|account\\s*(is\\s*)?(locked|suspended)|verify your|کارت به کارت|بازگشت وجه|بازپرداخت",
+    "otp_without_warning": true,
+    "notes_fa": "الگوهای تأییدنشدهٔ حدسی هم با برچسب unverified ثبت شده‌اند"
+  },
+  "promo_negative": {
+    "unsubscribe": "لغو\\s*\\d+|لغو۱۱|لغو ۱۱|unsubscribe|opt[\\s-]?out",
+    "promo_words": "تخفیف|جشنواره|فروش ویژه|قرعه کشی|قرعه‌کشی|جایزه|هدیه|رایگان|پیشنهاد ویژه|off\\s*\\d|discount|sale|% تخفیف|درصد تخفیف"
+  },
+  "unverified_patterns_fa": "الگوهای زیر بر اساس نمونه‌ی واقعی تأیید نشده‌اند و حدسی هستند: security_event (متن دقیق پیام‌های ورود/تغییر رمز بانک‌ها متفاوت است)، فهرست senders بیشتر بانک‌ها (به‌جز 30003305 ملت، 30002957 آینده، 30006905 ایران‌زمین، 30006767 سامان که در منابع عمومی دیده شده‌اند)، bank_impersonation بخش انگلیسی، و برخی واژگان loan/info. بانک mellal با برچسب تأییدنشده ثبت شده است."
+}

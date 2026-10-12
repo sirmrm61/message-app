@@ -90,6 +90,12 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                         promoScore = result.score,
                         reasonCodes = result.reasons.joinToString(";") { it.code },
                         deletedAt = null,
+                        txSubtype = result.bank?.subtype?.name,
+                        txAmountRials = result.bank?.amountRials,
+                        txBalanceRials = result.bank?.balanceRials,
+                        bankName = result.bank?.bankName,
+                        suspicious = result.suspicious,
+                        maybeTransactional = result.maybeTransactional,
                     )
                 )
 
