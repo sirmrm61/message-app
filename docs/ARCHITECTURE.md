@@ -59,3 +59,19 @@ SMS_DELIVER → SmsDeliverReceiver
 User marks promo/not-promo → ClassifierManager.learn + sender_rules upsert
 CleanupWorker (daily) → purge expired trash; if enabled, trash promos > N days
 ```
+
+## Bank SMS scoring (v3)
+
+`BankTxParser` is a JSON-driven weighted scorer. Patterns live in
+`data/src/main/assets/patterns/banking_fa.json` (versioned): 30 Iranian
+banks, structure regexes (signed/unsigned amount, balance, masked card,
+Jalali datetime, ref/serial, OTP, security-event), vocabulary groups,
+phishing signals and weights. Adding a bank = editing the JSON only.
+User-defined senders are stored in Room (`custom_bank_patterns`) and the
+classifier auto-learns senders with ≥3 structured transactional messages.
+
+Verdict fields persisted per message (DB v3): `txSubtype`,
+`txAmountRials`, `txBalanceRials`, `bankName`, `suspicious`,
+`maybeTransactional`. Order: sender rules → contacts → phishing → OTP →
+transactional → promo → personal. Corpus: 390+ samples; tx recall 1.000,
+promo precision 1.000, OTP-as-promo error 0.
