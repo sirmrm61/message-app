@@ -23,9 +23,15 @@ class ConversationRepositoryImpl @Inject constructor(
     private val moveLogDao: MoveLogDao,
 ) : ConversationRepository {
 
-    override fun observeConversations(folder: MessageFolder, query: String): Flow<List<Conversation>> =
-        conversationDao.observeByFolder(folder.name, query)
-            .map { list -> list.map { it.toDomain() } }
+    override fun observeConversations(folder: MessageFolder, query: String): Flow<List<Conversation>> {
+        val daoFlow = if (folder == MessageFolder.INBOX) {
+            // "All" = every conversation not moved away (archive, trash, promos).
+            conversationDao.observeInFolders(ALL_TAB_FOLDERS, query)
+        } else {
+            conversationDao.observeByFolder(folder.name, query)
+        }
+        return daoFlow.map { list -> list.map { it.toDomain() } }
+    }
 
     override fun observeConversation(threadId: Long): Flow<Conversation?> =
         conversationDao.observe(threadId).map { it?.toDomain() }
@@ -76,5 +82,14 @@ class ConversationRepositoryImpl @Inject constructor(
         }
         moveLogDao.clearBatch(batch)
         return logs.size
+    }
+
+    companion object {
+        private val ALL_TAB_FOLDERS = listOf(
+            MessageFolder.INBOX.name,
+            MessageFolder.PERSONAL.name,
+            MessageFolder.TRANSACTIONAL.name,
+            MessageFolder.OTP.name,
+        )
     }
 }

@@ -9,6 +9,7 @@ data class ConversationEntity(
     @PrimaryKey val threadId: Long,
     val address: String,
     val displayName: String,
+    val photoUri: String?,
     val snippet: String,
     val lastMessageDate: Long,
     val unreadCount: Int,

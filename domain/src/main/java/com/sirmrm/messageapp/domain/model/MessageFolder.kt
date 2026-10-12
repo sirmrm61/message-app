@@ -8,8 +8,11 @@ enum class MessageFolder {
     /** Person-to-person conversations. */
     PERSONAL,
 
-    /** OTP + bank/postal/billing traffic (protected). */
+    /** Bank/postal/billing traffic (protected). */
     TRANSACTIONAL,
+
+    /** One-time passwords / verification codes (protected). */
+    OTP,
 
     /** Advertising messages — auto-moved or user-moved. */
     PROMOTIONS,

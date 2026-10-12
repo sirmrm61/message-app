@@ -1,5 +1,9 @@
 package com.sirmrm.messageapp.app.ui
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +44,9 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { /* result handled by the system; steps continue regardless */ }
 
     Column(
         modifier = Modifier
@@ -116,7 +123,12 @@ fun OnboardingScreen(
                     Text(stringResource(R.string.onboarding_make_default))
                 }
                 1 -> Button(onClick = {
-                    viewModel.requestPermissions()
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.READ_CONTACTS,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        )
+                    )
                     viewModel.next()
                 }) {
                     Text(stringResource(R.string.onboarding_grant_permissions))

@@ -17,6 +17,15 @@ interface ConversationDao {
     )
     fun observeByFolder(folder: String, query: String): Flow<List<ConversationEntity>>
 
+    @Query(
+        """SELECT * FROM conversations
+           WHERE folder IN (:folders)
+             AND (:query = '' OR displayName LIKE '%' || :query || '%'
+                  OR snippet LIKE '%' || :query || '%' OR address LIKE '%' || :query || '%')
+           ORDER BY pinned DESC, lastMessageDate DESC"""
+    )
+    fun observeInFolders(folders: List<String>, query: String): Flow<List<ConversationEntity>>
+
     @Query("SELECT * FROM conversations WHERE threadId = :threadId")
     fun observe(threadId: Long): Flow<ConversationEntity?>
 
@@ -97,6 +106,9 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE category = 'OTP' OR category = 'TRANSACTIONAL'")
     suspend fun protectedMessages(): List<MessageEntity>
+
+    @Query("SELECT * FROM messages WHERE category = 'UNKNOWN'")
+    suspend fun unclassifiedMessages(): List<MessageEntity>
 
     @Query("SELECT * FROM messages")
     suspend fun exportAll(): List<MessageEntity>

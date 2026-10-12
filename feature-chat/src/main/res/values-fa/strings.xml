@@ -9,6 +9,9 @@
     <string name="action_not_promo">تبلیغات نیست</string>
     <string name="sim_1">سیم‌کارت ۱</string>
     <string name="sim_2">سیم‌کارت ۲</string>
+    <string name="otp_code_label">کد تایید</string>
+    <string name="action_copy_code">کپی</string>
+    <string name="otp_code_copied">کد کپی شد</string>
     <string name="reason_unsub">حاوی «لغو»</string>
     <string name="reason_festival">جشنواره/حراج</string>
     <string name="reason_discount">تخفیف</string>

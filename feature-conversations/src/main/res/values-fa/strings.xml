@@ -17,6 +17,7 @@
     <string name="banner_not_default_body">برای ارسال و دریافت پیامک، این برنامه را پیامک پیش‌فرض کنید.</string>
     <string name="folder_all">همه</string>
     <string name="folder_personal">شخصی</string>
+    <string name="folder_otp">کد یکبارمصرف</string>
     <string name="folder_transactional">تراکنشی</string>
     <string name="folder_promotions">تبلیغات</string>
     <string name="folder_archive">آرشیو</string>

@@ -2,6 +2,7 @@ package com.sirmrm.messageapp.feature.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sirmrm.messageapp.data.classifier.ClassifierManager
 import com.sirmrm.messageapp.domain.model.AppSettings
 import com.sirmrm.messageapp.domain.model.Conversation
 import com.sirmrm.messageapp.domain.model.MessageFolder
@@ -36,7 +37,14 @@ class ConversationsViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     private val messageRepository: MessageRepository,
     private val settingsRepository: SettingsRepository,
+    classifierManager: ClassifierManager,
 ) : ViewModel() {
+
+    init {
+        // Backfill: classify imported/uncategorized rows so folders and tabs
+        // reflect the classifier (idempotent, IO-bound).
+        viewModelScope.launch { classifierManager.classifyUnclassified() }
+    }
 
     private val folder = MutableStateFlow(MessageFolder.INBOX)
     private val query = MutableStateFlow("")

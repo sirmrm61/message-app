@@ -6,6 +6,8 @@ data class Conversation(
     val address: String,
     /** Display name — resolved contact name or raw address. */
     val displayName: String,
+    /** Contact photo URI when the address matches a contact. */
+    val photoUri: String? = null,
     val snippet: String,
     val lastMessageDate: Long,
     val unreadCount: Int = 0,

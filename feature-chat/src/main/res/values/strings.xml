@@ -9,6 +9,9 @@
     <string name="action_not_promo">Not promo</string>
     <string name="sim_1">SIM 1</string>
     <string name="sim_2">SIM 2</string>
+    <string name="otp_code_label">Verification code</string>
+    <string name="action_copy_code">Copy</string>
+    <string name="otp_code_copied">Code copied</string>
     <string name="reason_unsub">Unsubscribe marker</string>
     <string name="reason_festival">Sale/festival</string>
     <string name="reason_discount">Discount</string>

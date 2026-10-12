@@ -8,6 +8,9 @@ import com.sirmrm.messageapp.app.notify.NotificationHelper
 import com.sirmrm.messageapp.classifier.Decision
 import com.sirmrm.messageapp.classifier.SmsCategory
 import com.sirmrm.messageapp.data.classifier.ClassifierManager
+import com.sirmrm.messageapp.data.classifier.folderFor
+import com.sirmrm.messageapp.data.classifier.mergeConversationFolder
+import com.sirmrm.messageapp.data.contacts.ContactsResolver
 import com.sirmrm.messageapp.data.db.ConversationDao
 import com.sirmrm.messageapp.data.db.ConversationEntity
 import com.sirmrm.messageapp.data.db.MessageDao
@@ -37,6 +40,7 @@ class SmsDeliverReceiver : BroadcastReceiver() {
     @Inject lateinit var conversationDao: ConversationDao
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var notificationHelper: NotificationHelper
+    @Inject lateinit var contactsResolver: ContactsResolver
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -66,10 +70,7 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 // 2. Classify on-device.
                 val result = classifierManager.classify(address, body)
 
-                val folder = when (result.decision) {
-                    Decision.AUTO_MOVE -> MessageFolder.PROMOTIONS
-                    else -> MessageFolder.INBOX
-                }
+                val folder = folderFor(result)
 
                 // 3. Mirror into Room with classification metadata.
                 messageDao.upsert(
@@ -93,18 +94,20 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 )
 
                 val existing = conversationDao.get(threadId)
+                val contact = contactsResolver.lookup(address)
                 conversationDao.upsert(
                     ConversationEntity(
                         threadId = threadId,
                         address = address,
-                        displayName = existing?.displayName ?: address,
+                        displayName = contact?.displayName ?: existing?.displayName ?: address,
+                        photoUri = contact?.photoUri ?: existing?.photoUri,
                         snippet = body.take(140),
                         lastMessageDate = date,
                         unreadCount = (existing?.unreadCount ?: 0) + 1,
                         pinned = existing?.pinned ?: false,
                         muted = existing?.muted ?: false,
                         blocked = existing?.blocked ?: false,
-                        folder = existing?.folder?.takeIf { it != "INBOX" } ?: folder.name,
+                        folder = mergeConversationFolder(existing?.folder, folder),
                         customFolderId = existing?.customFolderId,
                         promoScore = result.score,
                         maybePromo = result.decision == Decision.SUGGEST,

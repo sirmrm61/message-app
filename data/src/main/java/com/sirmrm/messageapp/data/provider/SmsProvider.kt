@@ -3,6 +3,7 @@ package com.sirmrm.messageapp.data.provider
 import android.content.ContentValues
 import android.content.Context
 import android.provider.Telephony
+import com.sirmrm.messageapp.data.contacts.ContactsResolver
 import com.sirmrm.messageapp.data.db.ConversationDao
 import com.sirmrm.messageapp.data.db.ConversationEntity
 import com.sirmrm.messageapp.data.db.MessageDao
@@ -21,6 +22,7 @@ class SmsProvider @Inject constructor(
     @ApplicationContext private val context: Context,
     private val messageDao: MessageDao,
     private val conversationDao: ConversationDao,
+    private val contactsResolver: ContactsResolver,
 ) {
 
     private val projection = arrayOf(
@@ -125,11 +127,13 @@ class SmsProvider @Inject constructor(
     ) {
         val existing = conversationDao.get(threadId)
         if (existing != null && existing.lastMessageDate >= date) return
+        val contact = contactsResolver.lookup(address)
         conversationDao.upsert(
             ConversationEntity(
                 threadId = threadId,
                 address = address,
-                displayName = address,
+                displayName = contact?.displayName ?: existing?.displayName ?: address,
+                photoUri = contact?.photoUri ?: existing?.photoUri,
                 snippet = snippet.take(140),
                 lastMessageDate = date,
                 unreadCount = (existing?.unreadCount ?: 0) + unreadDelta,

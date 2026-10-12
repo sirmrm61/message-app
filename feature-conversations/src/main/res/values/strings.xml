@@ -17,6 +17,7 @@
     <string name="banner_not_default_body">Set this app as your default SMS app to send and receive messages.</string>
     <string name="folder_all">All</string>
     <string name="folder_personal">Personal</string>
+    <string name="folder_otp">OTP</string>
     <string name="folder_transactional">Transactional</string>
     <string name="folder_promotions">Promotions</string>
     <string name="folder_archive">Archive</string>

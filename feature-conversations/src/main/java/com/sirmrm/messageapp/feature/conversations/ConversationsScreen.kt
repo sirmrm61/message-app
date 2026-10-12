@@ -1,6 +1,10 @@
 package com.sirmrm.messageapp.feature.conversations
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,13 +67,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -247,6 +257,7 @@ private fun FolderTabs(selected: MessageFolder, onSelect: (MessageFolder) -> Uni
     val folders = listOf(
         MessageFolder.INBOX to R.string.folder_all,
         MessageFolder.PERSONAL to R.string.folder_personal,
+        MessageFolder.OTP to R.string.folder_otp,
         MessageFolder.TRANSACTIONAL to R.string.folder_transactional,
         MessageFolder.PROMOTIONS to R.string.folder_promotions,
         MessageFolder.ARCHIVE to R.string.folder_archive,
@@ -318,7 +329,7 @@ private fun ConversationRow(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(conversation.displayName, selected)
+                Avatar(conversation.displayName, selected, conversation.photoUri)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -375,7 +386,8 @@ private fun ConversationRow(
 }
 
 @Composable
-private fun Avatar(name: String, selected: Boolean) {
+private fun Avatar(name: String, selected: Boolean, photoUri: String?) {
+    val photo = rememberContactPhoto(photoUri)
     Box(
         Modifier
             .size(48.dp)
@@ -386,14 +398,35 @@ private fun Avatar(name: String, selected: Boolean) {
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (selected) {
-            Icon(Icons.Default.Done, null, tint = MaterialTheme.colorScheme.onPrimary)
-        } else {
-            Text(
+        when {
+            selected -> Icon(Icons.Default.Done, null, tint = MaterialTheme.colorScheme.onPrimary)
+            photo != null -> Image(
+                bitmap = photo.asImageBitmap(),
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            else -> Text(
                 name.firstOrNull()?.toString() ?: "#",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }
+}
+
+@Composable
+private fun rememberContactPhoto(photoUri: String?): Bitmap? {
+    val context = LocalContext.current
+    return produceState<Bitmap?>(null, photoUri) {
+        if (photoUri != null) {
+            value = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(Uri.parse(photoUri))?.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                }.getOrNull()
+            }
+        }
+    }.value
 }

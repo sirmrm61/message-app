@@ -50,6 +50,7 @@ abstract class DataModule {
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context): MessageAppDatabase =
             Room.databaseBuilder(context, MessageAppDatabase::class.java, "message-app.db")
+                .addMigrations(MessageAppDatabase.MIGRATION_1_2)
                 .fallbackToDestructiveMigration()
                 .build()
 

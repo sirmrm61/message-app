@@ -8,6 +8,9 @@ import com.sirmrm.messageapp.classifier.SmsClassifier
 import com.sirmrm.messageapp.classifier.SmsInput
 import com.sirmrm.messageapp.classifier.SmsCategory
 import com.sirmrm.messageapp.classifier.SenderRule
+import com.sirmrm.messageapp.data.contacts.ContactsResolver
+import com.sirmrm.messageapp.data.db.ConversationDao
+import com.sirmrm.messageapp.data.db.MessageDao
 import com.sirmrm.messageapp.data.db.NbDao
 import com.sirmrm.messageapp.data.db.NbMetaEntity
 import com.sirmrm.messageapp.data.db.NbTokenEntity
@@ -36,6 +39,9 @@ class ClassifierManager @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val senderRuleDao: SenderRuleDao,
     private val nbDao: NbDao,
+    private val messageDao: MessageDao,
+    private val conversationDao: ConversationDao,
+    private val contactsResolver: ContactsResolver,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -89,6 +95,43 @@ class ClassifierManager @Inject constructor(
             },
         )
         return classifier.classify(input)
+    }
+
+    /**
+     * Classifies every message still marked UNKNOWN (e.g. freshly imported
+     * provider rows) and applies the category folder to the message and its
+     * conversation. Idempotent; safe to run on every app start.
+     */
+    suspend fun classifyUnclassified(): Int {
+        // Oldest first so each conversation ends up reflecting its newest
+        // classified message.
+        val pending = messageDao.unclassifiedMessages().sortedBy { it.date }
+        for (m in pending) {
+            val result = classify(m.address, m.body)
+            val target = folderFor(result)
+            val merged = mergeConversationFolder(m.folder, target)
+            messageDao.upsert(
+                m.copy(
+                    folder = merged,
+                    category = result.category.name,
+                    promoScore = result.score,
+                    reasonCodes = result.reasons.joinToString(";") { it.code },
+                )
+            )
+            conversationDao.get(m.threadId)?.let { conv ->
+                val contact = contactsResolver.lookup(conv.address)
+                conversationDao.upsert(
+                    conv.copy(
+                        displayName = contact?.displayName ?: conv.displayName,
+                        photoUri = contact?.photoUri ?: conv.photoUri,
+                        folder = mergeConversationFolder(conv.folder, target),
+                        promoScore = result.score,
+                        maybePromo = result.decision == com.sirmrm.messageapp.classifier.Decision.SUGGEST,
+                    )
+                )
+            }
+        }
+        return pending.size
     }
 
     /** User feedback: learn + persist. */

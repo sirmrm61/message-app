@@ -20,6 +20,7 @@ fun ConversationEntity.toDomain() = Conversation(
     id = threadId,
     address = address,
     displayName = displayName,
+    photoUri = photoUri,
     snippet = snippet,
     lastMessageDate = lastMessageDate,
     unreadCount = unreadCount,

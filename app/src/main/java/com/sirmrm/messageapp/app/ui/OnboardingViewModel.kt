@@ -2,6 +2,7 @@ package com.sirmrm.messageapp.app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sirmrm.messageapp.data.classifier.ClassifierManager
 import com.sirmrm.messageapp.domain.repository.MessageRepository
 import com.sirmrm.messageapp.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,7 @@ data class OnboardingState(
 class OnboardingViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val settingsRepository: SettingsRepository,
+    private val classifierManager: ClassifierManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
@@ -32,8 +34,6 @@ class OnboardingViewModel @Inject constructor(
 
     fun next() = _state.update { it.copy(step = (it.step + 1).coerceAtMost(2)) }
 
-    /** Permission request happens via the activity; kept as a hook. */
-    fun requestPermissions() = Unit
 
     fun startImport() {
         if (_state.value.importing) return
@@ -42,6 +42,9 @@ class OnboardingViewModel @Inject constructor(
             val imported = messageRepository.importFromProvider { done, total ->
                 _state.update { it.copy(imported = done, total = total) }
             }
+            // Classify the imported rows so promos/transactions land in
+            // their folders and tabs right after the first run.
+            classifierManager.classifyUnclassified()
             _state.update {
                 it.copy(importing = false, importDone = true, imported = imported)
             }
