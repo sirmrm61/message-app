@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Core module strings live in the app module; kept for R generation. -->
+    <string name="core_placeholder" translatable="false">core</string>
+</resources>

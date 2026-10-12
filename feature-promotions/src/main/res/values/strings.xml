@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cleanup_title">Smart cleanup</string>
+    <string name="sensitivity_title">Detection sensitivity</string>
+    <string name="sensitivity_low">Conservative</string>
+    <string name="sensitivity_high">Aggressive</string>
+    <string name="suggestions_title">Suggestions</string>
+    <string name="promos_title">Promotions</string>
+    <string name="action_confirm_bulk">Move %d</string>
+</resources>

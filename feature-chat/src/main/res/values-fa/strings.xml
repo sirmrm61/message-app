@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_new_message">پیام جدید</string>
+    <string name="chat_recipient">گیرنده</string>
+    <string name="chat_hint">متن پیام</string>
+    <string name="action_back">بازگشت</string>
+    <string name="action_send">ارسال</string>
+    <string name="action_is_promo">تبلیغات است</string>
+    <string name="action_not_promo">تبلیغات نیست</string>
+    <string name="sim_1">سیم‌کارت ۱</string>
+    <string name="sim_2">سیم‌کارت ۲</string>
+    <string name="reason_unsub">حاوی «لغو»</string>
+    <string name="reason_festival">جشنواره/حراج</string>
+    <string name="reason_discount">تخفیف</string>
+    <string name="reason_cta">فراخوان اقدام</string>
+    <string name="reason_prize">جایزه</string>
+    <string name="reason_sale">واژگان بازاریابی</string>
+    <string name="reason_service_sender">سرشماره خدماتی</string>
+    <string name="reason_short_link">لینک کوتاه</string>
+    <string name="reason_unknown_mobile">شماره ناشناس</string>
+    <string name="reason_model">الگوی یادگرفته‌شده</string>
+    <string name="reason_free">پیشنهاد رایگان</string>
+    <string name="reason_visit">دعوت به بازدید</string>
+    <string name="reason_percent">درصد تخفیف</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cleanup_title">پاکسازی هوشمند</string>
+    <string name="sensitivity_title">حساسیت تشخیص</string>
+    <string name="sensitivity_low">محتاطانه</string>
+    <string name="sensitivity_high">تهاجمی</string>
+    <string name="suggestions_title">پیشنهادها</string>
+    <string name="promos_title">تبلیغات</string>
+    <string name="action_confirm_bulk">انتقال %d مورد</string>
+</resources>

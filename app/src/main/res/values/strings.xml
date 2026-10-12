@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart SMS</string>
+
+    <string name="channel_messages">Messages</string>
+    <string name="channel_cleanup">Cleanup reports</string>
+
+    <string name="action_reply">Reply</string>
+    <string name="action_copy_code">Copy code</string>
+    <string name="code_copied">Code copied</string>
+    <string name="action_skip">Skip</string>
+
+    <string name="onboarding_step_counter">Step %1$d of %2$d</string>
+    <string name="onboarding_welcome_title">Smart SMS, on-device</string>
+    <string name="onboarding_welcome_body">This app detects promotional SMS with on-device AI and keeps them out of your inbox. To receive and organize SMS, Android requires it to become your default SMS app.</string>
+    <string name="onboarding_make_default">Set as default SMS app</string>
+    <string name="onboarding_permissions_title">Permissions</string>
+    <string name="onboarding_permissions_body">SMS, contacts and notification permissions are needed. SMS access is only used to display and classify your messages — nothing ever leaves the device.</string>
+    <string name="onboarding_grant_permissions">Grant permissions</string>
+    <string name="onboarding_import_title">Import messages</string>
+    <string name="onboarding_import_progress">Importing %1$d / %2$d</string>
+    <string name="onboarding_import_done">%d messages imported</string>
+    <string name="onboarding_import_action">Import messages</string>
+    <string name="onboarding_start">Start</string>
+</resources>

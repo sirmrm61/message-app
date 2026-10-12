@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">پیامک هوشمند</string>
+
+    <string name="channel_messages">پیام‌ها</string>
+    <string name="channel_cleanup">گزارش پاکسازی</string>
+
+    <string name="action_reply">پاسخ</string>
+    <string name="action_copy_code">کپی کد</string>
+    <string name="code_copied">کد کپی شد</string>
+    <string name="action_skip">رد کردن</string>
+
+    <string name="onboarding_step_counter">مرحله‌ی %1$d از %2$d</string>
+    <string name="onboarding_welcome_title">پیامک هوشمند، روی دستگاه</string>
+    <string name="onboarding_welcome_body">این برنامه با هوش مصنوعی روی دستگاه، پیامک‌های تبلیغاتی را تشخیص می‌دهد و از صندوق شما دور نگه می‌دارد. برای دریافت و مدیریت پیامک، اندروید می‌خواهد آن را برنامه‌ی پیش‌فرض پیامک کنید.</string>
+    <string name="onboarding_make_default">تنظیم به‌عنوان پیامک پیش‌فرض</string>
+    <string name="onboarding_permissions_title">مجوزها</string>
+    <string name="onboarding_permissions_body">مجوز پیامک، مخاطبان و اعلان لازم است. دسترسی به پیامک فقط برای نمایش و دسته‌بندی پیام‌های شماست — هیچ داده‌ای از دستگاه خارج نمی‌شود.</string>
+    <string name="onboarding_grant_permissions">صدور مجوزها</string>
+    <string name="onboarding_import_title">ایمپورت پیامک‌ها</string>
+    <string name="onboarding_import_progress">در حال ایمپورت %1$d از %2$d</string>
+    <string name="onboarding_import_done">%d پیامک ایمپورت شد</string>
+    <string name="onboarding_import_action">ایمپورت پیامک‌ها</string>
+    <string name="onboarding_start">شروع</string>
+</resources>

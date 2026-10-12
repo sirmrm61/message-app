@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_title">پیامک هوشمند</string>
+    <string name="action_cleanup">پاکسازی هوشمند</string>
+    <string name="action_settings">تنظیمات</string>
+    <string name="action_new_message">پیام جدید</string>
+    <string name="action_undo">بازگردانی</string>
+    <string name="action_archive">آرشیو</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_mark_read">خوانده شد</string>
+    <string name="action_enable">فعال‌سازی</string>
+    <string name="msg_archived">گفت‌وگو آرشیو شد</string>
+    <string name="msg_trashed">به سطل بازیافت منتقل شد</string>
+    <string name="promos_cleaned_counter">%d تبلیغ این هفته پاک شد</string>
+    <string name="search_hint">جست‌وجوی پیام‌ها</string>
+    <string name="banner_not_default_title">حالت فقط‌خواندنی</string>
+    <string name="banner_not_default_body">برای ارسال و دریافت پیامک، این برنامه را پیامک پیش‌فرض کنید.</string>
+    <string name="folder_all">همه</string>
+    <string name="folder_personal">شخصی</string>
+    <string name="folder_transactional">تراکنشی</string>
+    <string name="folder_promotions">تبلیغات</string>
+    <string name="folder_archive">آرشیو</string>
+    <string name="folder_trash">سطل بازیافت</string>
+    <string name="badge_maybe_promo">شاید تبلیغ</string>
+</resources>

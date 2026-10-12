@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">تنظیمات</string>
+    <string name="section_appearance">ظاهر</string>
+    <string name="section_classifier">تشخیص تبلیغات</string>
+    <string name="section_privacy">حریم خصوصی</string>
+    <string name="setting_language">زبان</string>
+    <string name="setting_theme">تم</string>
+    <string name="theme_system">خودکار</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تیره</string>
+    <string name="setting_digits">ارقام</string>
+    <string name="setting_calendar">تقویم</string>
+    <string name="calendar_jalali">شمسی</string>
+    <string name="calendar_gregorian">میلادی</string>
+    <string name="setting_swipe">سوایپ راست = آرشیو (خاموش = حذف)</string>
+    <string name="setting_auto_delete">حذف خودکار تبلیغات قدیمی</string>
+    <string name="setting_auto_delete_sub">پیش‌فرض خاموش — فقط با فعال‌سازی شما به سطل بازیافت می‌رود</string>
+    <string name="setting_auto_delete_days">حذف تبلیغات قدیمی‌تر از %d روز</string>
+    <string name="setting_sender_patterns">سرشماره‌های خدماتی</string>
+    <string name="setting_sender_patterns_sub">پیشوندهای regex که فرستنده‌ی انبوه محسوب می‌شوند</string>
+    <string name="setting_biometric">قفل بیومتریک برنامه</string>
+    <string name="setting_flag_secure">جلوگیری از اسکرین‌شات (FLAG_SECURE)</string>
+    <string name="setting_blocked">فرستنده‌های مسدود</string>
+    <string name="action_add">افزودن</string>
+    <string name="action_block">مسدودسازی</string>
+</resources>

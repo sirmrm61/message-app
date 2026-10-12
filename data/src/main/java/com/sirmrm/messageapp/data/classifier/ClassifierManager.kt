@@ -1,0 +1,140 @@
+package com.sirmrm.messageapp.data.classifier
+
+import android.provider.Telephony
+import com.sirmrm.messageapp.classifier.ClassificationResult
+import com.sirmrm.messageapp.classifier.ClassifierConfig
+import com.sirmrm.messageapp.classifier.NaiveBayesLearner
+import com.sirmrm.messageapp.classifier.SmsClassifier
+import com.sirmrm.messageapp.classifier.SmsInput
+import com.sirmrm.messageapp.classifier.SmsCategory
+import com.sirmrm.messageapp.classifier.SenderRule
+import com.sirmrm.messageapp.data.db.NbDao
+import com.sirmrm.messageapp.data.db.NbMetaEntity
+import com.sirmrm.messageapp.data.db.NbTokenEntity
+import com.sirmrm.messageapp.data.db.SenderRuleDao
+import com.sirmrm.messageapp.domain.repository.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/**
+ * Wraps the pure-Kotlin [SmsClassifier] with:
+ *  - settings-driven config (editable service-sender prefixes, sensitivity)
+ *  - per-sender rules from Room
+ *  - Naive Bayes persistence so on-device learning survives restarts
+ */
+@Singleton
+class ClassifierManager @Inject constructor(
+    @ApplicationContext private val context: android.content.Context,
+    private val settingsRepository: SettingsRepository,
+    private val senderRuleDao: SenderRuleDao,
+    private val nbDao: NbDao,
+) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val mutex = Mutex()
+
+    @Volatile
+    private var classifier: SmsClassifier = SmsClassifier()
+
+    init {
+        scope.launch { reload() }
+    }
+
+    /** Rebuild the classifier from current settings + persisted model. */
+    suspend fun reload() = mutex.withLock {
+        val settings = settingsRepository.settings.first()
+        val patterns = settings.serviceSenderPatterns
+            .ifEmpty { ClassifierConfig.DEFAULT_SERVICE_SENDER_PATTERNS }
+
+        // Sensitivity slider shifts both thresholds together.
+        val shift = (0.5f - settings.sensitivity) * 0.4f
+        val config = ClassifierConfig(
+            autoMoveThreshold = (ClassifierConfig().autoMoveThreshold + shift).coerceIn(0.5f, 0.95f),
+            suggestThreshold = (ClassifierConfig().suggestThreshold + shift).coerceIn(0.15f, 0.6f),
+            serviceSenderPatterns = patterns,
+        )
+
+        val c = SmsClassifier(config)
+        val meta = nbDao.meta()
+        val tokens = nbDao.allTokens()
+        if (meta != null || tokens.isNotEmpty()) {
+            c.restore(
+                NaiveBayesLearner.Snapshot(
+                    promoTokenCounts = tokens.associate { it.token to it.promoCount },
+                    hamTokenCounts = tokens.associate { it.token to it.hamCount },
+                    promoDocs = meta?.promoDocs ?: 0,
+                    hamDocs = meta?.hamDocs ?: 0,
+                )
+            )
+        }
+        classifier = c
+    }
+
+    suspend fun classify(address: String, body: String): ClassificationResult {
+        val rule = senderRuleDao.get(normalizeAddress(address))
+        val input = SmsInput(
+            body = body,
+            sender = address,
+            isContact = isInContacts(address),
+            hasConversation = hasReplies(address),
+            senderRule = rule?.let {
+                if (it.alwaysPromo) SenderRule.ALWAYS_PROMO else SenderRule.NEVER_PROMO
+            },
+        )
+        return classifier.classify(input)
+    }
+
+    /** User feedback: learn + persist. */
+    suspend fun learn(address: String, body: String, isPromo: Boolean) {
+        mutex.withLock {
+            classifier.learn(SmsInput(body = body, sender = address), isPromo)
+            persist()
+        }
+    }
+
+    private suspend fun persist() {
+        val snap = classifier.snapshot()
+        val entities = (snap.promoTokenCounts.keys + snap.hamTokenCounts.keys).map { t ->
+            NbTokenEntity(t, snap.promoTokenCounts[t] ?: 0, snap.hamTokenCounts[t] ?: 0)
+        }
+        nbDao.upsertTokens(entities)
+        nbDao.upsertMeta(NbMetaEntity(0, snap.promoDocs, snap.hamDocs))
+    }
+
+    private fun normalizeAddress(address: String): String =
+        com.sirmrm.messageapp.classifier.TextNormalizer.normalizeSender(address)
+            .ifBlank { address.trim() }
+
+    private fun isInContacts(address: String): Boolean {
+        return try {
+            val uri = android.provider.ContactsContract.PhoneLookup.CONTENT_FILTER_URI
+                .buildUpon().appendPath(address).build()
+            context.contentResolver.query(uri, arrayOf(android.provider.ContactsContract.PhoneLookup._ID), null, null, null)
+                ?.use { it.moveToFirst() } ?: false
+        } catch (e: SecurityException) {
+            false
+        }
+    }
+
+    /** Two-way conversation: any message the user sent to this address. */
+    private fun hasReplies(address: String): Boolean {
+        return try {
+            context.contentResolver.query(
+                Telephony.Sms.Sent.CONTENT_URI,
+                arrayOf(Telephony.Sms._ID),
+                "${Telephony.Sms.ADDRESS} = ?",
+                arrayOf(address),
+                null,
+            )?.use { it.moveToFirst() } ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+}

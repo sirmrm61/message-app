@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_new_message">New message</string>
+    <string name="chat_recipient">To</string>
+    <string name="chat_hint">Message</string>
+    <string name="action_back">Back</string>
+    <string name="action_send">Send</string>
+    <string name="action_is_promo">This is promo</string>
+    <string name="action_not_promo">Not promo</string>
+    <string name="sim_1">SIM 1</string>
+    <string name="sim_2">SIM 2</string>
+    <string name="reason_unsub">Unsubscribe marker</string>
+    <string name="reason_festival">Sale/festival</string>
+    <string name="reason_discount">Discount</string>
+    <string name="reason_cta">Call to action</string>
+    <string name="reason_prize">Prize</string>
+    <string name="reason_sale">Marketing words</string>
+    <string name="reason_service_sender">Service number</string>
+    <string name="reason_short_link">Short link</string>
+    <string name="reason_unknown_mobile">Unknown number</string>
+    <string name="reason_model">Learned pattern</string>
+    <string name="reason_free">Free offer</string>
+    <string name="reason_visit">Visit/install invite</string>
+    <string name="reason_percent">Percent off</string>
+</resources>

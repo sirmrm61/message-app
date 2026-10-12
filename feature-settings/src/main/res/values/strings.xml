@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_classifier">Classifier</string>
+    <string name="section_privacy">Privacy</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_theme">Theme</string>
+    <string name="theme_system">Auto</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="setting_digits">Digits</string>
+    <string name="setting_calendar">Calendar</string>
+    <string name="calendar_jalali">Jalali</string>
+    <string name="calendar_gregorian">Gregorian</string>
+    <string name="setting_swipe">Swipe right archives (off = deletes)</string>
+    <string name="setting_auto_delete">Auto-delete old promos</string>
+    <string name="setting_auto_delete_sub">Off by default — moves promos to trash only when enabled</string>
+    <string name="setting_auto_delete_days">Delete promos older than %d days</string>
+    <string name="setting_sender_patterns">Service sender prefixes</string>
+    <string name="setting_sender_patterns_sub">Regex prefixes treated as bulk senders</string>
+    <string name="setting_biometric">Biometric app lock</string>
+    <string name="setting_flag_secure">Block screenshots (FLAG_SECURE)</string>
+    <string name="setting_blocked">Blocked senders</string>
+    <string name="action_add">Add</string>
+    <string name="action_block">Block</string>
+</resources>
