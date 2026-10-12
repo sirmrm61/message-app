@@ -10,8 +10,15 @@ import android.provider.Telephony
 /** Helpers for acquiring/checking the default-SMS role. */
 object SmsRoleHelper {
 
-    fun isDefaultSmsApp(context: Context): Boolean =
-        Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+    fun isDefaultSmsApp(context: Context): Boolean {
+        val def = Telephony.Sms.getDefaultSmsPackage(context)
+        var held = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val rm = context.getSystemService(RoleManager::class.java)
+            held = rm?.isRoleHeld(RoleManager.ROLE_SMS) == true
+        }
+        return def == context.packageName || held
+    }
 
     /**
      * Returns an intent that asks the user to make this app the default SMS

@@ -147,7 +147,9 @@ class SmsProvider @Inject constructor(
 
     /** Insert a received SMS into the system provider. Returns provider id. */
     fun insertReceived(address: String, body: String, date: Long, subscriptionId: Int): Long? {
-        if (Telephony.Sms.getDefaultSmsPackage(context) != context.packageName) return null
+        // No local default-app check: the provider rejects writes from
+        // non-default apps anyway, and getDefaultSmsPackage() can misreport
+        // on builds where package visibility resolves nothing.
         val threadId = Telephony.Threads.getOrCreateThreadId(context, address)
         val values = ContentValues().apply {
             put(Telephony.Sms.THREAD_ID, threadId)
@@ -158,9 +160,9 @@ class SmsProvider @Inject constructor(
             put(Telephony.Sms.SEEN, 0)
             put(Telephony.Sms.SUBSCRIPTION_ID, subscriptionId)
         }
-        return context.contentResolver
-            .insert(Telephony.Sms.Inbox.CONTENT_URI, values)
-            ?.lastPathSegment?.toLongOrNull()
+        return runCatching {
+            context.contentResolver.insert(Telephony.Sms.Inbox.CONTENT_URI, values)
+        }.getOrNull()?.lastPathSegment?.toLongOrNull()
     }
 
     /** Insert a sent SMS into the system provider. Returns provider id. */

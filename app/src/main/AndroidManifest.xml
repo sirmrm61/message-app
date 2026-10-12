@@ -15,6 +15,17 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Android 11 package visibility: required for
+         Telephony.Sms.getDefaultSmsPackage() to resolve the default app. -->
+    <queries>
+        <intent>
+            <action android:name="android.provider.Telephony.SMS_DELIVER" />
+        </intent>
+        <intent>
+            <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MessageApp"
         android:allowBackup="true"
