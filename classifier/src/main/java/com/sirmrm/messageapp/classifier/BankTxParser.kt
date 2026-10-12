@@ -78,14 +78,14 @@ object BankTxParser {
 
     private val CURRENCY = Regex("""ريال|ریال|تومان|تومن|IRR|toman|rial""")
 
-    private val BALANCE_WORD = Regex("""مانده|موجودي|موجودی|balance|باقيمانده|باقیمانده""")
+    private val BALANCE_WORD = Regex("""مانده\s*(حساب|کارت|مبلغ|ریال|تومان|[:؛=\-]|\d)|موجودي|موجودی|balance|باقيمانده\s*(حساب|مبلغ|[:؛])|باقیمانده\s*(حساب|مبلغ|[:؛])""")
 
     private val DEPOSIT_WORDS = Regex(
         """واريز|واریز|افزایش\s*(اعتبار|موجودی|موجودي)?|دریافت\s*(موفق)?\s*[:؛]?\s*\d|deposit|credit\b"""
     )
 
     private val WITHDRAWAL_WORDS = Regex(
-        """برداشت|کسر\s*(از|مبلغ)?|خرید\s*(موفق)?|خروج\s*(وجه)?|پرداخت\s*(موفق)?\s*[:؛]?\s*\d|debit|withdraw|purchase"""
+        """برداشت|کسر\s*(از|مبلغ)|خرید\s*(موفق|مبلغ|به\s*مبلغ|کارت|از\s*حساب|[:؛])|خروج\s*وجه|پرداخت\s*(موفق)?\s*[:؛]?\s*\d|debit|withdraw|purchase"""
     )
 
     private val BANK_HINTS = listOf(

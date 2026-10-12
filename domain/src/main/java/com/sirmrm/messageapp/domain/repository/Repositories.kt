@@ -14,6 +14,8 @@ interface ConversationRepository {
     suspend fun setMuted(threadId: Long, muted: Boolean)
     suspend fun markRead(threadId: Long)
     suspend fun moveToFolder(threadId: Long, folder: MessageFolder, customFolderId: Long? = null)
+    /** Permanently delete a conversation and all its messages. */
+    suspend fun deletePermanently(threadId: Long)
     suspend fun saveDraft(threadId: Long, draft: String?)
     fun observeUserFolders(): Flow<List<UserFolder>>
     suspend fun createFolder(name: String): Long

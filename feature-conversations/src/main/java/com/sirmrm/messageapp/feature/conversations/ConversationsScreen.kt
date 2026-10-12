@@ -163,6 +163,9 @@ fun ConversationsScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = { viewModel.selectAll() }) {
+                            Icon(Icons.Default.CheckCircle, stringResource(R.string.action_select_all))
+                        }
                         IconButton(onClick = { viewModel.markSelectedRead() }) {
                             Icon(Icons.Default.Done, stringResource(R.string.action_mark_read))
                         }
@@ -248,6 +251,7 @@ fun ConversationsScreen(
                     calendar = state.settings?.calendar ?: CalendarMode.JALALI,
                     digits = state.settings?.digits ?: DigitStyle.PERSIAN,
                     onToggle = viewModel::toggleTxSelection,
+                    onSelectAll = viewModel::selectAllTx,
                 )
             } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -287,15 +291,24 @@ private fun TransactionsView(
     calendar: CalendarMode,
     digits: DigitStyle,
     onToggle: (Long) -> Unit,
+    onSelectAll: () -> Unit,
 ) {
     val tx = state.transactions
     Column(Modifier.fillMaxSize()) {
-        Text(
-            stringResource(R.string.tx_counts, state.depositCount, state.withdrawalCount),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        )
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.tx_counts, state.depositCount, state.withdrawalCount),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+            )
+            TextButton(onClick = onSelectAll) {
+                Text(stringResource(R.string.action_select_all))
+            }
+        }
         if (state.txSelectionMode) {
             Text(
                 stringResource(
@@ -308,8 +321,21 @@ private fun TransactionsView(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
+        val grouped = remember(tx) { tx.groupBy { it.message.address } }
         LazyColumn(Modifier.fillMaxSize()) {
-            items(tx, key = { it.id }) { item ->
+            grouped.forEach { (sender, items_) ->
+                stickyHeader {
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Text(
+                            sender,
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+                items(items_, key = { it.id }) { item ->
                 val selected = item.id in state.txSelection
                 Surface(
                     color = if (selected) MaterialTheme.colorScheme.secondaryContainer
@@ -359,6 +385,7 @@ private fun TransactionsView(
                             }
                         }
                     }
+                }
                 }
             }
         }

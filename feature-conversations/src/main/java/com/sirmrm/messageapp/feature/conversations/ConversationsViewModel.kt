@@ -148,8 +148,25 @@ class ConversationsViewModel @Inject constructor(
     }
 
     fun trash(threadId: Long) = viewModelScope.launch {
-        conversationRepository.moveToFolder(threadId, MessageFolder.TRASH)
+        // Inside the trash tab, "delete" means permanently delete.
+        if (folder.value == MessageFolder.TRASH) {
+            conversationRepository.deletePermanently(threadId)
+        } else {
+            conversationRepository.moveToFolder(threadId, MessageFolder.TRASH)
+        }
     }
+
+    fun selectAll() {
+        selection.value = filteredConversationsCached().map { it.id }.toSet()
+    }
+
+    private fun filteredConversationsCached(): List<Conversation> = state.value.conversations
+
+    fun selectAllTx() {
+        txSelection.value = transactionsCached().map { it.id }.toSet()
+    }
+
+    private fun transactionsCached(): List<BankTxItem> = state.value.transactions
 
     fun togglePin(conversation: Conversation) = viewModelScope.launch {
         conversationRepository.setPinned(conversation.id, !conversation.pinned)
@@ -165,9 +182,15 @@ class ConversationsViewModel @Inject constructor(
     }
 
     fun trashSelected() = viewModelScope.launch {
-        selection.value.forEach { conversationRepository.moveToFolder(it, MessageFolder.TRASH) }
+        val permanent = folder.value == MessageFolder.TRASH
+        selection.value.forEach {
+            if (permanent) conversationRepository.deletePermanently(it)
+            else conversationRepository.moveToFolder(it, MessageFolder.TRASH)
+        }
         clearSelection()
     }
+
+    fun clearTxSelection() { txSelection.value = emptySet() }
 
     fun markSelectedRead() = viewModelScope.launch {
         selection.value.forEach { conversationRepository.markRead(it) }

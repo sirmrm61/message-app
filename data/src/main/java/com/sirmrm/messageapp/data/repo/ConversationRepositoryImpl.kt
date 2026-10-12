@@ -63,6 +63,11 @@ class ConversationRepositoryImpl @Inject constructor(
         conversationDao.moveToFolder(threadId, folder.name, customFolderId)
     }
 
+    override suspend fun deletePermanently(threadId: Long) {
+        conversationDao.deleteThreadMessages(threadId)
+        conversationDao.deleteConversation(threadId)
+    }
+
     override suspend fun saveDraft(threadId: Long, draft: String?) =
         conversationDao.saveDraft(threadId, draft)
 

@@ -48,20 +48,26 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             SmsCategory.PERSONAL, 0f, true,
             listOf(Reason("contact", "فرستنده در مخاطبان شماست", "Sender is in your contacts")),
         )
-        if (input.hasConversation) return RuleOutcome(
-            SmsCategory.PERSONAL, 0f, true,
-            listOf(Reason("conversation", "با این فرستنده قبلاً پیام ردوبدل کرده‌اید", "You have exchanged messages with this sender")),
-        )
 
-        // 3 — protected classes first: OTP, then transactional
+        // 3 — protected classes first: OTP, then bank transactions.
+        // Bank formats outrank the conversation whitelist: replying once to a
+        // bank thread must not turn later bank SMS into "personal".
         val otpReasons = matchAny(text, OTP_PATTERNS)
         if (otpReasons.isNotEmpty()) {
             return RuleOutcome(SmsCategory.OTP, 0f, true, otpReasons)
         }
-        val transactionalReasons = matchAny(text, TRANSACTIONAL_PATTERNS)
+        val transactionalReasons = matchAny(text, TRANSACTIONAL_PATTERNS).toMutableList()
+        if (transactionalReasons.isEmpty() && BankTxParser.isBankMessage(text)) {
+            transactionalReasons += Reason("bank_format", "قالب پیامک بانکی", "Bank SMS format")
+        }
         if (transactionalReasons.isNotEmpty()) {
             return RuleOutcome(SmsCategory.TRANSACTIONAL, 0f, true, transactionalReasons)
         }
+
+        if (input.hasConversation) return RuleOutcome(
+            SmsCategory.PERSONAL, 0f, true,
+            listOf(Reason("conversation", "با این فرستنده قبلاً پیام ردوبدل کرده‌اید", "You have exchanged messages with this sender")),
+        )
 
         // 4 — promo signals
         var score = 0f
@@ -119,18 +125,19 @@ internal class RuleEngine(private val config: ClassifierConfig) {
                 Reason("otp_numeric", "حاوی کد عددی", "Contains a numeric code"),
         )
 
-        // ---- protected: transactional ---------------------------------------
+        // ---- protected: bank transactions only -------------------------------
+        // "Transactional" means bank SMS: deposits, withdrawals, card purchases,
+        // balance notices and Iranian bank service messages. Postal/billing/
+        // appointment texts are NOT transactional and stay in the inbox flow.
         private val TRANSACTIONAL_PATTERNS: List<Pair<Regex, Reason>> = listOf(
-            Regex("برداشت|واریز|مانده|موجودی|تراکنش|کارت\\s*به\\s*کارت|حواله|ساتنا|پایا|شتاب") to
+            Regex("برداشت|واريز|واریز|مانده|موجودي|موجودی|تراکنش|کارت\\s*به\\s*کارت|حواله|ساتنا|پایا|شتاب|چک\\s*صیادی") to
                 Reason("bank_fa", "پیام تراکنش بانکی", "Bank transaction message"),
-            Regex("کد\\s*(رهگیری|پیگیری)|مرسوله|پست\\s*\\d{10,}|تحویل\\s*بسته|سفارش\\s*شما\\s*(ارسال|تحویل)") to
-                Reason("post_fa", "پیام پست/رهگیری مرسوله", "Postal / tracking message"),
-            Regex("قبض|صورت\\s*حساب|بدهی|پرداخت\\s*(موفق|ناموفق)|شارژ\\s*(موفق|حساب)") to
-                Reason("billing_fa", "پیام قبض/صورت‌حساب", "Billing message"),
-            Regex("\\b(transaction|deposit|withdraw|balance|payment\\s+(of|was|received|failed|declined|confirmed)|has been shipped|order\\s*(shipped|confirmed|#)|tracking\\s*(code|number|id))\\b") to
-                Reason("trx_en", "Transactional message", "Transactional message"),
-            Regex("دکتر|نوبت\\s*(دهی|شما)|ویزیت|بیمارستان|درمانگاه|آزمایش") to
-                Reason("appointment_fa", "پیام نوبت/درمان", "Appointment message"),
+            Regex("حساب\\s*[:#]?\\s*\\d{3,}|کارت\\s*[\\d*\\s]{4,}|شماره\\s*کارت|شبا\\s*[:#]?\\s*IR\\d") to
+                Reason("bank_account_fa", "ارجاع به حساب/کارت بانکی", "Bank account / card reference"),
+            Regex("بانک\\s*(ملت|ملی|سامان|سپه|صادرات|پاسارگاد|تجارت|رفاه|پارسیان|اقتصاد|کشاورزی|مسکن|آینده|دی|شهر|گردشگری|مرکزی|سرمایه|خاورمیانه|قوامین|ایران\\s*زمین|رسالت|توسعه|انصار|مهر\\s*ایران)") to
+                Reason("bank_name_fa", "نام بانک در متن", "Bank name in text"),
+            Regex("\\b(transaction|deposit|withdraw(al)?|balance|debit|credit\\s*(card)?\\s*(purchase|payment)?|card\\s*(ending|purchase)|account\\s*(no|number|balance))\\b") to
+                Reason("bank_en", "Bank transaction message", "Bank transaction message"),
         )
 
         // ---- promo signals ---------------------------------------------------

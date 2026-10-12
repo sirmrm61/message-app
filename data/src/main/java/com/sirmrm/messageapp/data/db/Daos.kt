@@ -50,6 +50,12 @@ interface ConversationDao {
     @Query("UPDATE conversations SET draft = :draft WHERE threadId = :threadId")
     suspend fun saveDraft(threadId: Long, draft: String?)
 
+    @Query("DELETE FROM conversations WHERE threadId = :threadId")
+    suspend fun deleteConversation(threadId: Long)
+
+    @Query("DELETE FROM messages WHERE threadId = :threadId")
+    suspend fun deleteThreadMessages(threadId: Long)
+
     @Query("UPDATE conversations SET snippet = :snippet, lastMessageDate = :date, unreadCount = unreadCount + :unreadDelta, promoScore = :score, maybePromo = :maybePromo WHERE threadId = :threadId")
     suspend fun updateForNewMessage(threadId: Long, snippet: String, date: Long, unreadDelta: Int, score: Float, maybePromo: Boolean)
 

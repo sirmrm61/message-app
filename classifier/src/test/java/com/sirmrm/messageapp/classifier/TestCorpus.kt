@@ -47,28 +47,46 @@ object TestCorpus {
         }
 
         // ---------- TRANSACTIONAL (protected) ----------
+        // Bank transaction SMS only — postal / billing / appointment
+        // messages are NOT transactional and live in the inbox flow.
         val trxBodies = listOf(
             "برداشت: 1,250,000 ریال\nکارت 6037**1234\nمانده: 8,900,000 ریال",
             "واریز وجه 4500000 ریال به حساب شما انجام شد",
             "تراکنش کارت به کارت موفق. کد پیگیری: 55443322",
             "تراکنش خرید: 350,000 ریال - فروشگاه رفاه",
+            "بانک ملت: واریز مبلغ 25,000,000 ریال به حساب 6104** موجودی: 80,500,000 ریال",
+            "حساب: 5022-1234-5678 واریز 1000000 ریال",
+            "شماره کارت 6037-9975-1234-5678 برداشت 250000 تومان",
+            "شبا: IR062960000000100324200001 واریز شد",
+            "حواله پایا به مبلغ 3,000,000 ریال صادر شد",
+            "حواله ساتنا به مبلغ ۲٬۰۰۰٬۰۰۰ ریال ثبت شد",
+            "چک صیادی شما وصول شد. مبلغ 5,000,000 ریال",
+            "مانده حساب شما: 12,400,000 ریال",
+            "Transaction of 500000 IRR approved. Balance: 2400000",
+            "Debit: 750000 IRR. Account balance: 1000000",
+            "خرید موفق: 89000 ریال - شتاب",
+            "مانده حساب: 4,500,000 ریال",
+        )
+        // Non-bank informational texts: postal, billing, appointments.
+        // These must NOT be transactional anymore.
+        val nonBankBodies = listOf(
             "کد رهگیری مرسوله شما: 123456789012345678901234",
             "مرسوله پستی شما تحویل داده شد",
             "سفارش شما ارسال شد. کد پیگیری: 99876",
             "قبض برق شما صادر شد. مبلغ: 120,000 تومان",
             "پرداخت قبض 55000 تومان موفق بود",
-            "نوبت شما در درمانگاه سلامت روز سه‌شنبه ساعت 10",
-            "ویزیت دکتر احمدی فردا ساعت ۱۸ تایید شد",
-            "حواله ساتنا به مبلغ ۲٬۰۰۰٬۰۰۰ ریال ثبت شد",
             "Your payment of $19.99 was received",
             "Your order #4471 has been shipped",
-            "Transaction of 500000 IRR approved. Balance: 2400000",
-            "صورت حساب دوره‌ای شما آماده شد",
             "بدهی قبض اینترنت شما 180,000 تومان است",
-            "خرید 89000 ریال - شتاب",
-            "مانده حساب: 4,500,000 ریال",
+            "نوبت شما در درمانگاه سلامت روز سه‌شنبه ساعت 10",
+            "ویزیت دکتر احمدی فردا ساعت ۱۸ تایید شد",
+            "صورت حساب دوره‌ای شما آماده شد",
             "آزمایش شما آماده تحویل است",
         )
+        val nonBankSenders = listOf("PostIran", "10003355", "Digikala", "20009988")
+        for ((i, b) in nonBankBodies.withIndex()) {
+            out += Sample(b, nonBankSenders[i % nonBankSenders.size], SmsCategory.PERSONAL)
+        }
         val trxSenders = listOf("BankMelli", "982000", "PostIran", "10003355", "Digikala")
         for ((i, b) in trxBodies.withIndex()) {
             out += Sample(b, trxSenders[i % trxSenders.size], SmsCategory.TRANSACTIONAL)
