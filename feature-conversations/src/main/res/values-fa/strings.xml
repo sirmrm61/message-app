@@ -30,4 +30,5 @@
     <string name="tx_deposit">واریز</string>
     <string name="tx_withdrawal">برداشت</string>
     <string name="rial_unit">ریال</string>
+    <string name="crash_title">گزارش آخرین خطا</string>
 </resources>

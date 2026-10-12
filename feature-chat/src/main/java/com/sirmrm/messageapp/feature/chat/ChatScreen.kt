@@ -143,7 +143,7 @@ fun ChatScreen(
             ) {
                 items(
                     grouped,
-                    key = { if (it is SmsMessage) it.id else it as Long },
+                    key = { if (it is SmsMessage) "m${it.id}" else "d${it}" },
                 ) { item ->
                     if (item is SmsMessage) {
                         val msg = item
@@ -157,7 +157,7 @@ fun ChatScreen(
                     } else {
                         Text(
                             JalaliDate.formatDayHeader(
-                                dayKeyToMillis(item as Long),
+                                dayKeyToMillis(item as Long), // day header entries are Long dayKeys
                                 state.settings?.calendar ?: CalendarMode.JALALI,
                                 state.settings?.digits ?: DigitStyle.PERSIAN,
                             ),

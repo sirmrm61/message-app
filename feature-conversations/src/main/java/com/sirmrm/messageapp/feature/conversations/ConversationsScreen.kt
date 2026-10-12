@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,8 +74,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,6 +108,38 @@ fun ConversationsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    // Show the last fatal crash trace (if any) so it can be reported.
+    var crashLog by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        crashLog = withContext(Dispatchers.IO) {
+            runCatching {
+                java.io.File(context.filesDir, "crash.log")
+                    .takeIf { it.exists() }?.readText()
+            }.getOrNull()
+        }
+    }
+    crashLog?.let { log ->
+        AlertDialog(
+            onDismissRequest = {
+                runCatching { java.io.File(context.filesDir, "crash.log").delete() }
+                crashLog = null
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    runCatching { java.io.File(context.filesDir, "crash.log").delete() }
+                    crashLog = null
+                }) { Text("OK") }
+            },
+            title = { Text(stringResource(R.string.crash_title)) },
+            text = {
+                SelectionContainer {
+                    Text(log, style = MaterialTheme.typography.bodySmall)
+                }
+            },
+        )
+    }
     val scope = rememberCoroutineScope()
     val undoLabel = stringResource(R.string.action_undo)
     val archivedMsg = stringResource(R.string.msg_archived)
@@ -365,7 +399,7 @@ private fun DateFilterButton(
                 c.get(java.util.Calendar.DAY_OF_MONTH),
             ).show()
         }) {
-            Icon(Icons.Default.MoreVert, stringResource(R.string.action_filter_date))
+            Icon(Icons.Default.Info, stringResource(R.string.action_filter_date))
         }
     }
 }

@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 data class ConversationsUiState(
@@ -70,7 +72,7 @@ class ConversationsViewModel @Inject constructor(
     init {
         // Backfill: classify imported/uncategorized rows so folders and tabs
         // reflect the classifier (idempotent, IO-bound).
-        viewModelScope.launch { classifierManager.classifyUnclassified() }
+        viewModelScope.launch { runCatching { classifierManager.classifyUnclassified() } }
     }
 
     private val folder = MutableStateFlow(MessageFolder.INBOX)
@@ -80,13 +82,15 @@ class ConversationsViewModel @Inject constructor(
     private val filterDate = MutableStateFlow<Long?>(null)
 
     private val transactions = messageDao.observeTransactional().map { list ->
-        list.map { it.toDomain() }
-            .mapNotNull { m ->
+        list.mapNotNull { e ->
+            runCatching {
+                val m = e.toDomain()
                 BankTxParser.parse(m.body)?.let { tx ->
                     BankTxItem(m.id, m, tx.direction, tx.amountRials)
                 }
-            }
-    }
+            }.getOrNull()
+        }
+    }.flowOn(Dispatchers.Default)
 
     private val conversations = combine(folder, query) { f, q -> f to q }
         .flatMapLatest { (f, q) -> conversationRepository.observeConversations(f, q) }

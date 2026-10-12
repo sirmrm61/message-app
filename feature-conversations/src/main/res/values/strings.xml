@@ -30,4 +30,5 @@
     <string name="tx_deposit">Deposit</string>
     <string name="tx_withdrawal">Withdrawal</string>
     <string name="rial_unit">IRR</string>
+    <string name="crash_title">Last crash report</string>
 </resources>

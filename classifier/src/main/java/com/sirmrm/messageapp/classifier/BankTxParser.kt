@@ -62,8 +62,11 @@ object BankTxParser {
 
         // Prefer a number right after the direction keyword, before مانده.
         if (dirMatch != null) {
-            val after = t.substring(dirMatch.range.last + 1, balanceIdx)
-            AMOUNT.find(after)?.let { return toLong(it) }
+            val from = dirMatch.range.last + 1
+            if (from < balanceIdx) {
+                val after = t.substring(from, balanceIdx)
+                AMOUNT.find(after)?.let { return toLong(it) }
+            }
         }
         // Otherwise any number before the balance clause.
         AMOUNT.find(t.substring(0, balanceIdx))?.let { return toLong(it) }

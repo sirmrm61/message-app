@@ -25,8 +25,23 @@ class MessageApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashLogger()
         createNotificationChannels()
         workScheduler.scheduleDailyCleanup()
+    }
+
+    /** Writes fatal crashes to filesDir/crash.log so the next launch can show the trace. */
+    private fun installCrashLogger() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching {
+                getFileStreamPath("crash.log").writeText(
+                    "${java.util.Date()}\nthread=${thread.name}\n${throwable.stackTraceToString()}"
+                )
+            }
+            previous?.uncaughtException(thread, throwable)
+                ?: kotlin.system.exitProcess(1)
+        }
     }
 
     private fun createNotificationChannels() {
