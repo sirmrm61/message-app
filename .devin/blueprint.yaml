@@ -1,0 +1,22 @@
+# Devin environment blueprint — Android SDK + Gradle setup (verified in-session).
+initialize: |
+  mkdir -p ~/android-sdk/cmdline-tools ~/tools
+  (cd ~/tools && curl -sL -o cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && curl -sL -o gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip && unzip -qo cmdtools.zip -d ~/android-sdk/cmdline-tools && mv ~/android-sdk/cmdline-tools/cmdline-tools ~/android-sdk/cmdline-tools/latest && unzip -qo gradle.zip -d ~)
+  yes | ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
+  ~/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+  printf 'sdk.dir=%s/android-sdk\n' "$HOME" > local.properties
+  echo "ANDROID_HOME=$HOME/android-sdk" >> $ENVRC
+  echo "PATH=$HOME/gradle-8.9/bin:\$PATH" >> $ENVRC
+maintenance: |
+  ./gradlew --version > /dev/null
+knowledge:
+  - name: build
+    contents: |
+      # ./gradlew :app:assembleDebug
+  - name: test
+    contents: |
+      # ./gradlew :classifier:test   (pure-JVM tests, reports precision/recall)
+  - name: notes
+    contents: |
+      # Maven Central rate-limits this box: settings.gradle.kts lists Google's
+      # GCS mirror first. minSdk 26, compileSdk 35, JDK 17, no INTERNET permission.
