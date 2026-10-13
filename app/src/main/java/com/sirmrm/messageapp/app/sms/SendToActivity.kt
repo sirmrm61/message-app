@@ -14,14 +14,16 @@ class SendToActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val address = intent?.data?.schemeSpecificPart?.substringBefore('?') ?: ""
-        val bodyFromUri = intent?.data?.let { uri ->
-            uri.getQueryParameter("body") ?: uri.query
-                ?.split("&")
-                ?.firstOrNull { it.startsWith("body=", true) }
-                ?.substringAfter('=')
-                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-        }
+        // sms:/smsto: URIs are opaque (not hierarchical) — calling
+        // getQueryParameter/query on them throws UnsupportedOperationException.
+        // Parse the scheme-specific part manually instead.
+        val sssp = intent?.data?.schemeSpecificPart.orEmpty()
+        val address = sssp.substringBefore('?')
+        val bodyFromUri = sssp.substringAfter('?', "")
+            .split("&")
+            .firstOrNull { it.startsWith("body=", true) }
+            ?.substringAfter('=')
+            ?.let { runCatching { java.net.URLDecoder.decode(it, "UTF-8") }.getOrNull() }
         val body = intent?.getStringExtra(Intent.EXTRA_TEXT) ?: bodyFromUri ?: ""
 
         startActivity(

@@ -84,7 +84,47 @@ object JalaliDate {
         return c.get(Calendar.YEAR) * 1000L + c.get(Calendar.DAY_OF_YEAR)
     }
 
-    data class Jalali(val year: Int, val month: Int, val day: Int)
+    data class Jalali(val year: Int, val month: Int, val day: Int) :
+        Comparable<Jalali> {
+        override fun compareTo(other: Jalali): Int =
+            compareValuesBy(this, other, { it.year }, { it.month }, { it.day })
+    }
+
+    fun jalaliMonthName(month: Int): String = MONTH_NAMES[month - 1]
+
+    /**
+     * Millis (at local noon) of a Jalali date. Found by binary search on the
+     * forward conversion, so it stays consistent with gregorianToJalali by
+     * construction — no inverse-algorithm drift.
+     */
+    fun jalaliToGregorianMillis(jy: Int, jm: Int, jd: Int): Long {
+        val dayMs = 86_400_000L
+        var lo = 0L
+        var hi = 4_104_115_200_000L // ~2100-01-01
+        val target = Jalali(jy, jm, jd)
+        while (hi - lo > dayMs) {
+            val mid = lo + (hi - lo) / 2
+            if (gregorianToJalali(mid) < target) lo = mid + dayMs else hi = mid
+        }
+        // Binary search leaves lo at most one day before the target —
+        // step forward until we land inside it.
+        while (gregorianToJalali(lo) < target) lo += dayMs
+        // lo is inside the target day; snap to local noon.
+        val c = Calendar.getInstance().apply { timeInMillis = lo }
+        c.set(Calendar.HOUR_OF_DAY, 12)
+        c.set(Calendar.MINUTE, 0)
+        c.set(Calendar.SECOND, 0)
+        c.set(Calendar.MILLISECOND, 0)
+        return c.timeInMillis
+    }
+
+    /** Days in a Jalali month — derived from the boundary millis. */
+    fun jalaliMonthDays(jy: Int, jm: Int): Int {
+        val start = jalaliToGregorianMillis(jy, jm, 1)
+        val end = if (jm == 12) jalaliToGregorianMillis(jy + 1, 1, 1)
+            else jalaliToGregorianMillis(jy, jm + 1, 1)
+        return ((end - start) / 86_400_000L).toInt()
+    }
 
     fun gregorianToJalali(timestamp: Long): Jalali {
         val c = Calendar.getInstance().apply { timeInMillis = timestamp }

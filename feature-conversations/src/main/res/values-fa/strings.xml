@@ -51,4 +51,7 @@
     <string name="cd_reject_tx">رد — فرستنده تراکنشی نیست</string>
     <string name="tx_rule_saved">قاعده ثبت شد</string>
     <string name="undo">بازگردانی</string>
+    <string name="filter_pick_date">انتخاب تاریخ</string>
+    <string name="action_select">انتخاب</string>
+    <string name="action_cancel">انصراف</string>
 </resources>

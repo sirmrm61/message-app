@@ -51,4 +51,7 @@
     <string name="cd_reject_tx">Reject transactional sender</string>
     <string name="tx_rule_saved">Rule saved</string>
     <string name="undo">Undo</string>
+    <string name="filter_pick_date">Pick a date</string>
+    <string name="action_select">Select</string>
+    <string name="action_cancel">Cancel</string>
 </resources>

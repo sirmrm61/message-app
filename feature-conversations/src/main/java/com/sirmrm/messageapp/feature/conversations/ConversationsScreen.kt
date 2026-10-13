@@ -671,6 +671,7 @@ private fun DateFilterButton(
     onClear: () -> Unit,
 ) {
     val context = LocalContext.current
+    var showJalaliPicker by remember { mutableStateOf(false) }
     if (filterDate != null) {
         TextButton(onClick = onClear) {
             Text(JalaliDate.format(filterDate, calendar, digits))
@@ -678,20 +679,114 @@ private fun DateFilterButton(
         }
     } else {
         IconButton(onClick = {
-            val c = java.util.Calendar.getInstance()
-            android.app.DatePickerDialog(
-                context,
-                { _, y, m, d ->
-                    val cal = java.util.Calendar.getInstance()
-                    cal.set(y, m, d, 12, 0, 0)
-                    onPick(cal.timeInMillis)
-                },
-                c.get(java.util.Calendar.YEAR),
-                c.get(java.util.Calendar.MONTH),
-                c.get(java.util.Calendar.DAY_OF_MONTH),
-            ).show()
+            if (calendar == CalendarMode.JALALI) {
+                showJalaliPicker = true
+            } else {
+                val c = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(
+                    context,
+                    { _, y, m, d ->
+                        val cal = java.util.Calendar.getInstance()
+                        cal.set(y, m, d, 12, 0, 0)
+                        onPick(cal.timeInMillis)
+                    },
+                    c.get(java.util.Calendar.YEAR),
+                    c.get(java.util.Calendar.MONTH),
+                    c.get(java.util.Calendar.DAY_OF_MONTH),
+                ).show()
+            }
         }) {
             Icon(Icons.Default.DateRange, stringResource(R.string.action_filter_date), tint = appColors.secondaryLabel)
+        }
+    }
+    if (showJalaliPicker) {
+        JalaliDatePickerDialog(
+            digits = digits,
+            onDismiss = { showJalaliPicker = false },
+            onPick = { showJalaliPicker = false; onPick(it) },
+        )
+    }
+}
+
+/** Jalali wheel picker: year / month-name / day columns. */
+@Composable
+private fun JalaliDatePickerDialog(
+    digits: DigitStyle,
+    onDismiss: () -> Unit,
+    onPick: (Long) -> Unit,
+) {
+    val today = JalaliDate.gregorianToJalali(System.currentTimeMillis())
+    var year by remember { mutableStateOf(today.year) }
+    var month by remember { mutableStateOf(today.month) }
+    var day by remember { mutableStateOf(today.day) }
+    val monthDays = JalaliDate.jalaliMonthDays(year, month)
+    if (day > monthDays) day = monthDays
+
+    fun num(n: Int) = if (digits == DigitStyle.PERSIAN) n.toString().toPersianDigits() else n.toString()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.filter_pick_date)) },
+        text = {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                PickerColumn(
+                    items = ((today.year - 10)..(today.year + 1)).toList(),
+                    selected = year,
+                    label = { num(it) },
+                    onSelect = { year = it },
+                )
+                PickerColumn(
+                    items = (1..12).toList(),
+                    selected = month,
+                    label = { JalaliDate.jalaliMonthName(it) },
+                    onSelect = { month = it },
+                )
+                PickerColumn(
+                    items = (1..monthDays).toList(),
+                    selected = day.coerceIn(1, monthDays),
+                    label = { num(it) },
+                    onSelect = { day = it },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onPick(JalaliDate.jalaliToGregorianMillis(year, month, day.coerceIn(1, monthDays)))
+            }) { Text(stringResource(R.string.action_select)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun <T> PickerColumn(
+    items: List<T>,
+    selected: T,
+    label: (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    LazyColumn(
+        Modifier
+            .height(160.dp)
+            .width(88.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        items(items.size) { i ->
+            val it = items[i]
+            val sel = it == selected
+            Text(
+                label(it),
+                style = if (sel) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+                fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                color = if (sel) MaterialTheme.colorScheme.primary else appColors.secondaryLabel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pressable { onSelect(it) }
+                    .padding(vertical = 8.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }

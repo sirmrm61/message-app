@@ -118,6 +118,7 @@ class MainActivity : AppCompatActivity() {
                 val start = when {
                     !s.onboardingDone -> "onboarding"
                     startThreadId > 0 -> "chat/$startThreadId"
+                    composeAddress != null -> "compose"
                     else -> "conversations"
                 }
 
