@@ -222,4 +222,56 @@ class SmsClassifierTest {
         assertEquals(BankTxParser.Direction.WITHDRAWAL,
             BankTxParser.evaluate("برداشت -800,000 ریال").direction)
     }
+
+    @Test
+    fun `bank SMS from a saved contact is still transactional`() {
+        val c = SmsClassifier()
+        val r = c.classify(SmsInput(
+            body = "*بانک شهر* خريد با کارت برداشت از:700796887209 مبلغ:3,803,800ريال موجودي:18,885,299 ريال 1405/04/29 14:57:57",
+            sender = "+98200035",
+            isContact = true,
+        ))
+        assertEquals(SmsCategory.TRANSACTIONAL, r.category)
+    }
+
+    @Test
+    fun `OTP from a saved contact is still OTP`() {
+        val c = SmsClassifier()
+        val r = c.classify(SmsInput(
+            body = "کد تایید ورود: 384215",
+            sender = "+989111111111",
+            isContact = true,
+        ))
+        assertEquals(SmsCategory.OTP, r.category)
+    }
+
+    @Test
+    fun `ordinary text from a contact stays personal`() {
+        val c = SmsClassifier()
+        val r = c.classify(SmsInput(
+            body = "سلام چطوری؟ فردا میای سر کار؟",
+            sender = "+989111111111",
+            isContact = true,
+        ))
+        assertEquals(SmsCategory.PERSONAL, r.category)
+    }
+
+    @Test
+    fun `bank login notification classifies as transactional security`() {
+        val c = SmsClassifier()
+        val r = c.classify(SmsInput(
+            body = "*بانک شهر* ورود به همراه شهر تاريخ : 1405/6/3 ساعت : 17:59:54",
+            sender = "Bank Shahr",
+        ))
+        assertEquals(SmsCategory.TRANSACTIONAL, r.category)
+    }
+
+    @Test
+    fun `date-time fragment is not parsed as amount`() {
+        val v = BankTxParser.evaluate(
+            "بانک ملت واريز:25,000,000 ريال مانده:40,000,000 ريال 1405/07/20-14:30",
+        )
+        // 25,000,000 ريال — not "14" from the timestamp tail.
+        assertEquals(25_000_000L, v.amountRials)
+    }
 }

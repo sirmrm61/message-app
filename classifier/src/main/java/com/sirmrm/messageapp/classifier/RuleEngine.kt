@@ -5,9 +5,10 @@ package com.sirmrm.messageapp.classifier
  *
  * Priority order:
  *  1. Explicit user sender rules (always / never promo)
- *  2. Whitelist — saved contacts and previously-conversed senders
- *  3. OTP / transactional detectors — these win over every promo signal and
+ *  2. OTP / transactional detectors — these win over every promo signal and
  *     are what keeps the "OTP wrongly marked as promo" error at zero
+ *  3. Whitelist — saved contacts and previously-conversed senders (they
+ *     shield against promo only; protected detectors already ran)
  *  4. Weighted promo signals (keywords, unsubscribe markers, service sender
  *     ids, short links, marketing-from-unknown-number)
  */
@@ -47,13 +48,7 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             SenderRule.ALWAYS_TX, SenderRule.NEVER_TX, null -> Unit
         }
 
-        // 2 — whitelist
-        if (input.isContact) return RuleOutcome(
-            SmsCategory.PERSONAL, 0f, true,
-            listOf(Reason("contact", "فرستنده در مخاطبان شماست", "Sender is in your contacts")),
-        )
-
-        // 3 — bank scorer first: it also detects bank-imitating phishing,
+        // 2 — bank scorer first: it also detects bank-imitating phishing,
         // which must be evaluated BEFORE the OTP shortcut so a fake OTP is
         // flagged suspicious instead of being protected.
         val verdict = BankTxParser.evaluate(
@@ -91,6 +86,14 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             return RuleOutcome(SmsCategory.TRANSACTIONAL, 0f, true, reasons, verdict)
         }
 
+        // Whitelist — after the protected detectors so a bank sender saved in
+        // contacts (or replied to once) still lands in the transactional/OTP
+        // tabs, while a contact's ordinary text stays personal and can never
+        // be auto-moved to promotions.
+        if (input.isContact) return RuleOutcome(
+            SmsCategory.PERSONAL, 0f, true,
+            listOf(Reason("contact", "فرستنده در مخاطبان شماست", "Sender is in your contacts")),
+        )
         if (input.hasConversation) return RuleOutcome(
             SmsCategory.PERSONAL, 0f, true,
             listOf(Reason("conversation", "با این فرستنده قبلاً پیام ردوبدل کرده‌اید", "You have exchanged messages with this sender")),
@@ -182,9 +185,9 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             Signal(0.12f, Reason(code, fa, en), listOf(Regex(pattern)))
 
         private val PROMO_SIGNALS: List<Signal> = listOf(
-            // Iranian unsubscribe marker: «لغو ۱۱» / «لغو11» with any digits
+            // Iranian unsubscribe marker: «لغو ۱۱» / «لغو ارسال ۱۱» with any digits
             strong("unsub", "حاوی «لغو شماره» (امضای پیامک تبلیغاتی)", "Unsubscribe marker («لغو N»)",
-                "لغو\\s*[\\d]+"),
+                "لغو\\s*(ارسال\\s*)?\\d+"),
             strong("festival", "جشنواره/فروش ویژه", "Festival / special sale",
                 "جشنواره|فروش\\s*ویژه|حراج"),
             mid("discount", "تخفیف/کد تخفیف", "Discount / coupon code",
@@ -201,6 +204,14 @@ internal class RuleEngine(private val config: ClassifierConfig) {
                 "بازدید\\s*کنید|دانلود\\s*کنید|نصب\\s*کنید|visit\\s*us|download\\s*now"),
             weak("percent", "درصد تخفیف عددی", "Numeric percent-off",
                 "\\b\\d{1,2}\\s*(%|درصد)\\s*(تخفیف|off)"),
+            // Operator loyalty / bundle promos seen in real traffic (MCI Club,
+            // Irancell offers): «باشگاه مشتریان», «امتیاز», free bundles.
+            mid("club", "باشگاه مشتریان/امتیاز", "Loyalty club / points",
+                "باشگاه\\s*مشتریان|امتیاز(ات)?\\s*(دو\\s*برابر|قابل\\s*دریافت)|به\\s*امتیاز"),
+            weak("free_bundle", "بسته/اینترنت رایگان", "Free bundle / data",
+                "بسته\\s*(اینترنت)?\\s*رایگان|گیگابایت\\s*رایگان|اینترنت\\s*رایگان|دقایق\\s*مکالمه\\s*رایگان"),
+            mid("exclusive", "پیشنهاد اختصاصی/کمپین", "Exclusive offer / campaign",
+                "پیشنهاد\\s*اختصاصی|کمپین|شگفت‌انگیز|شگفت انگیز|تبلیغ\\s*ویژه|فقط\\s*تا\\s*\\d{1,2}\\s*(روز|آذر|دی|بهمن|اسفند|فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان)"),
         )
     }
 }

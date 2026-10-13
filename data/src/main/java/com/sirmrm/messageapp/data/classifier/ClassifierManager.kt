@@ -145,6 +145,23 @@ class ClassifierManager @Inject constructor(
         // Oldest first so each conversation ends up reflecting its newest
         // classified message.
         val pending = messageDao.unclassifiedMessages().sortedBy { it.date }
+        var moved = applyClassification(pending)
+
+        // Protected re-check: messages previously marked PERSONAL may have
+        // landed there only because the sender was a contact (e.g. a bank's
+        // number saved in contacts). Re-evaluate and only move them when the
+        // engine now proves a protected class — normal personal texts stay.
+        val reCheck = messageDao.personalMessages()
+        for (m in reCheck) {
+            val result = classify(m.address, m.body)
+            if (result.category.name != "OTP" && result.category.name != "TRANSACTIONAL") continue
+            applyClassification(listOf(m))
+            moved++
+        }
+        return moved
+    }
+
+    private suspend fun applyClassification(pending: List<com.sirmrm.messageapp.data.db.MessageEntity>): Int {
         for (m in pending) {
             val result = classify(m.address, m.body)
             val target = folderFor(result)

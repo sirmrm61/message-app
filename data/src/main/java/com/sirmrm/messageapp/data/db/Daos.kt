@@ -132,6 +132,10 @@ interface MessageDao {
     @Query("SELECT * FROM messages")
     suspend fun exportAll(): List<MessageEntity>
 
+    /** Personal-classified messages eligible for a protected re-check. */
+    @Query("SELECT * FROM messages WHERE category = 'PERSONAL' AND type = 'INBOX'")
+    suspend fun personalMessages(): List<MessageEntity>
+
     data class Location(val folder: String, val customFolderId: Long?)
 }
 

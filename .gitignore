@@ -12,3 +12,4 @@ captures/
 *.aab
 *.keystore
 .kotlin/
+classifier/src/test/resources/real_backup.json
