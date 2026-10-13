@@ -453,6 +453,23 @@ private fun TtsSection(viewModel: SettingsViewModel, s: AppSettings) {
                 onValueChange = viewModel::setTtsSpeed,
                 valueRange = 0.5f..2f,
             )
+            // preview: default sample or the user's own text
+            var previewText by remember { mutableStateOf("") }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlinedTextField(
+                    value = previewText,
+                    onValueChange = { previewText = it },
+                    placeholder = { Text(stringResource(R.string.setting_tts_preview_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { viewModel.previewVoice(previewText) }) {
+                    Text(stringResource(R.string.setting_tts_preview))
+                }
+            }
             ToggleRow(stringResource(R.string.setting_tts_hp_only), checked = s.ttsAutoReadHeadphoneOnly, onChange = viewModel::setTtsHpOnly)
             ToggleRow(stringResource(R.string.setting_tts_screen_only), checked = s.ttsAutoReadScreenOnOnly, onChange = viewModel::setTtsScreenOnly)
             ToggleRow(stringResource(R.string.setting_tts_auto_otp), checked = s.ttsAutoReadOtp, onChange = viewModel::setTtsAutoOtp)

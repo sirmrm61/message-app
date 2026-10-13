@@ -28,7 +28,7 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":classifier"))
-    implementation(files("../app/libs/sherpa-onnx-1.13.8.aar"))
+    implementation(files("libs/sherpa-onnx.jar"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.hilt.android)

@@ -156,7 +156,8 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                             // Foreground: read directly, no service needed.
                             com.sirmrm.messageapp.tts.TtsEngineHolder.speak(
                                 context.applicationContext, body,
-                                keyContact?.voiceId ?: settings.ttsVoiceId)
+                                keyContact?.voiceId ?: settings.ttsVoiceId,
+                                settings.ttsSpeed, settings.ttsVolume)
                         } else {
                             // App closed: try the mediaPlayback foreground service; when the
                             // platform blocks it (Android 12+), the «خواندن» notification

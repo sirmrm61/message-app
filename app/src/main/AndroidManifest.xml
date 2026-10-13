@@ -38,6 +38,13 @@
         android:theme="@style/Theme.MessageApp"
         tools:targetApi="tiramisu">
 
+        <!-- On-demand WorkManager init (MessageApp implements Configuration.Provider) -->
+        <provider
+            android:name="androidx.work.WorkManagerInitializer"
+            android:authorities="${applicationId}.workmanager-init"
+            tools:node="remove"
+            tools:ignore="Instantiatable" />
+
         <!-- Auto-store per-app locale set via AppCompatDelegate on API < 33 -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

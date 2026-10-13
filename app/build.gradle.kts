@@ -14,14 +14,20 @@ android {
         applicationId = "com.sirmrm.messageapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         // Ship only the two ABIs the spec asks for — keeps x86/x86_64 libs out.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     buildFeatures {
         compose = true
+    }
+
+    lint {
+        // False positive: the merged initializer is already removed via
+        // tools:node="remove" in AndroidManifest; lint still flags it.
+        disable += "RemoveWorkManagerInitializer"
     }
 
     buildTypes {
@@ -32,6 +38,9 @@ android {
         }
         release {
             isMinifyEnabled = false
+            // Sign release builds with the debug key so the released APK
+            // installs over the debug builds users already have.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

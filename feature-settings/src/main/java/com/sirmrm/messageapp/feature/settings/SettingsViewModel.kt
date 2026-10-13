@@ -12,7 +12,9 @@ import com.sirmrm.messageapp.data.db.CustomBankPatternEntity
 import com.sirmrm.messageapp.domain.repository.SenderRuleRepository
 import com.sirmrm.messageapp.domain.repository.SettingsRepository
 import com.sirmrm.messageapp.domain.repository.SenderRuleRow
+import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,7 @@ class SettingsViewModel @Inject constructor(
     private val customBankPatternDao: CustomBankPatternDao,
     private val senderRuleRepository: SenderRuleRepository,
     private val keyContactDao: com.sirmrm.messageapp.data.db.KeyContactDao,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     /** User-defined bank sender patterns (added in Settings, used at classify time). */
@@ -74,6 +77,17 @@ class SettingsViewModel @Inject constructor(
     fun setTtsScreenOnly(v: Boolean) = update { it.copy(ttsAutoReadScreenOnOnly = v) }
     fun setTtsAutoOtp(v: Boolean) = update { it.copy(ttsAutoReadOtp = v) }
     fun setTtsAutoTx(v: Boolean) = update { it.copy(ttsAutoReadTransactional = v) }
+
+    /** Preview the selected voice/speed on a sample or user-provided text. */
+    fun previewVoice(text: String) = viewModelScope.launch {
+        val s = settings.value ?: return@launch
+        if (!s.ttsEnabled) return@launch
+        val sample = text.ifBlank { "سلام، این نمونه‌ی صدای فارسی برنامه‌ی پیامک هوشمند است." }
+        com.sirmrm.messageapp.tts.TtsEngineHolder.speak(
+            appContext, sample, s.ttsVoiceId, s.ttsSpeed, s.ttsVolume)
+    }
+
+    fun stopPreview() = com.sirmrm.messageapp.tts.TtsEngineHolder.stop()
 
     /** Key contacts — their new messages may auto-read. */
     val keyContacts: StateFlow<List<com.sirmrm.messageapp.data.db.KeyContactEntity>> =

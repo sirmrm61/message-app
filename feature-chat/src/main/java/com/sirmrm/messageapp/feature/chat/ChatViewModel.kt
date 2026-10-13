@@ -155,7 +155,7 @@ class ChatViewModel @Inject constructor(
     fun speak(message: SmsMessage) = viewModelScope.launch {
         val s = state.value.settings ?: return@launch
         if (!s.ttsEnabled) return@launch
-        com.sirmrm.messageapp.tts.TtsEngineHolder.speak(appContext, message.body, s.ttsVoiceId)
+        com.sirmrm.messageapp.tts.TtsEngineHolder.speak(appContext, message.body, s.ttsVoiceId, s.ttsSpeed, s.ttsVolume)
     }
 
     fun stopSpeaking() {
@@ -170,7 +170,7 @@ class ChatViewModel @Inject constructor(
             .filter { it.type == com.sirmrm.messageapp.domain.model.MessageType.INBOX }
             .let { if (unreadOnly) it.filter { m -> !m.read } else it.takeLast(20) }
         com.sirmrm.messageapp.tts.TtsEngineHolder.speakAll(
-            appContext, msgs.map { it2 -> it2.body }, s.ttsVoiceId)
+            appContext, msgs.map { it2 -> it2.body }, s.ttsVoiceId, s.ttsSpeed, s.ttsVolume)
     }
 
     fun toggleKeyContact() = viewModelScope.launch {

@@ -45,4 +45,6 @@
     <string name="licenses_engine">موتور تبدیل متن به گفتار</string>
     <string name="licenses_voices">مدل‌های صوتی فارسی (Piper VITS، فشرده int8)</string>
     <string name="licenses_disclaimer">این سه صدا گویشور فارسی معیار هستند و لهجه‌ی منطقه‌ای ندارند. خواندن کاملاً آفلاین و بدون مجوز INTERNET انجام می‌شود.</string>
+    <string name="setting_tts_preview">پخش نمونه</string>
+    <string name="setting_tts_preview_hint">متن دلخواه برای آزمایش…</string>
 </resources>

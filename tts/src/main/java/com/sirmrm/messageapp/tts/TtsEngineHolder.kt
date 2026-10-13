@@ -14,12 +14,17 @@ object TtsEngineHolder {
 
     @Volatile private var systemTts: TextToSpeech? = null
     @Volatile private var sherpa: SherpaFaTts? = null
+    @Volatile private var loadedVoiceId: String? = null
 
-    /** Lazily creates the sherpa engine (loads models on first use only). */
+    /** Lazily creates the sherpa engine (loads models on first use only);
+     *  recreates it when a different bundled voice is requested. */
     private fun sherpa(context: Context, voiceId: String): SherpaFaTts? {
-        sherpa?.let { return it }
+        if (sherpa != null && loadedVoiceId == voiceId) return sherpa
         synchronized(this) {
-            if (sherpa == null) sherpa = SherpaFaTts.create(context, voiceId)
+            if (sherpa != null && loadedVoiceId == voiceId) return sherpa
+            sherpa?.release()
+            sherpa = SherpaFaTts.create(context, voiceId)
+            loadedVoiceId = if (sherpa != null) voiceId else null
             return sherpa
         }
     }
@@ -32,9 +37,12 @@ object TtsEngineHolder {
         }
     }
 
-    fun speak(context: Context, text: String, voiceId: String = "voice1", onDone: (() -> Unit)? = null) {
+    fun speak(context: Context, text: String, voiceId: String = "voice1",
+              speed: Float = 1f, volume: Float = 1f, onDone: (() -> Unit)? = null) {
         val engine = sherpa(context.applicationContext, voiceId)
         if (engine != null) {
+            engine.lengthScale = speed
+            engine.volume = volume
             engine.speak(text, onDone)
             return
         }
@@ -54,9 +62,12 @@ object TtsEngineHolder {
     }
 
     fun speakAll(context: Context, texts: List<String>, voiceId: String = "voice1",
-                 maxItems: Int = 3, onDone: (() -> Unit)? = null) {
+                 speed: Float = 1f, volume: Float = 1f, maxItems: Int = 3,
+                 onDone: (() -> Unit)? = null) {
         val engine = sherpa(context.applicationContext, voiceId)
         if (engine != null) {
+            engine.lengthScale = speed
+            engine.volume = volume
             engine.speakAll(texts, maxItems, onDone)
             return
         }

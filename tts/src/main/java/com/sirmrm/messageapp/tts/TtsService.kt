@@ -93,7 +93,7 @@ class TtsService : Service() {
                 // Respect silent mode — never play over it.
                 val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
                 if (am.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
-                    TtsEngineHolder.speak(applicationContext, next.first, s.ttsVoiceId) {
+                    TtsEngineHolder.speak(applicationContext, next.first, s.ttsVoiceId, s.ttsSpeed, s.ttsVolume) {
                         speaking = false
                         drainQueue()
                     }
