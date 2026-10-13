@@ -3,10 +3,12 @@ package com.sirmrm.messageapp.feature.conversations
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,51 +22,43 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -82,15 +76,28 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.border
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sirmrm.messageapp.classifier.BankTxParser
+import com.sirmrm.messageapp.core.designsystem.AppBadge
+import com.sirmrm.messageapp.core.designsystem.AppAvatar
+import com.sirmrm.messageapp.core.designsystem.AppEmptyState
+import com.sirmrm.messageapp.core.designsystem.AppSearchBar
+import com.sirmrm.messageapp.core.designsystem.Hairline
+import com.sirmrm.messageapp.core.designsystem.UnreadDot
+import com.sirmrm.messageapp.core.designsystem.appColors
+import com.sirmrm.messageapp.core.designsystem.pressable
 import com.sirmrm.messageapp.core.util.JalaliDate
 import com.sirmrm.messageapp.core.util.PersianDigits.toPersianDigits
 import com.sirmrm.messageapp.domain.model.CalendarMode
@@ -98,7 +105,7 @@ import com.sirmrm.messageapp.domain.model.Conversation
 import com.sirmrm.messageapp.domain.model.DigitStyle
 import com.sirmrm.messageapp.domain.model.MessageFolder
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ConversationsScreen(
     isDefaultSms: Boolean,
@@ -155,50 +162,58 @@ fun ConversationsScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = appColors.groupedBackground,
         topBar = {
             if (state.selectionMode) {
                 TopAppBar(
-                    title = { Text("${state.selection.size}") },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = appColors.card),
+                    title = { Text("${state.selection.size}", style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearSelection() }) {
-                            Icon(Icons.Default.Close, null)
+                            Icon(Icons.Default.Close, stringResource(R.string.cd_confirm_tx))
                         }
                     },
                     actions = {
                         IconButton(onClick = { viewModel.selectAll() }) {
-                            Icon(Icons.Default.CheckCircle, stringResource(R.string.action_select_all))
+                            Icon(Icons.Default.CheckCircle, stringResource(R.string.action_select_all), tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = { viewModel.markSelectedRead() }) {
-                            Icon(Icons.Default.Done, stringResource(R.string.action_mark_read))
+                            Icon(Icons.Default.Done, stringResource(R.string.action_mark_read), tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = { viewModel.archiveSelected() }) {
-                            Icon(Icons.Default.Email, stringResource(R.string.action_archive))
+                            Icon(Icons.Outlined.Archive, stringResource(R.string.action_archive), tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = { viewModel.trashSelected() }) {
-                            Icon(Icons.Default.Delete, stringResource(R.string.action_delete))
+                            Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
             } else {
-                TopAppBar(
+                LargeTopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = appColors.groupedBackground,
+                        scrolledContainerColor = appColors.groupedBackground,
+                    ),
                     title = { Text(stringResource(R.string.app_title)) },
                     actions = {
                         IconButton(onClick = onOpenPromotions) {
-                            Icon(Icons.Default.CleaningServices, stringResource(R.string.action_cleanup))
+                            Icon(Icons.Outlined.CleaningServices, stringResource(R.string.action_cleanup), tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Default.Settings, stringResource(R.string.action_settings))
+                            Icon(Icons.Outlined.Settings, stringResource(R.string.action_settings), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        if (isDefaultSms) {
+                            IconButton(onClick = onNewMessage) {
+                                Icon(Icons.Outlined.Create, stringResource(R.string.action_new_message), tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     },
                 )
-            }
-        },
-        floatingActionButton = {
-            if (isDefaultSms && !state.selectionMode) {
-                FloatingActionButton(onClick = onNewMessage) {
-                    Icon(Icons.Default.Create, stringResource(R.string.action_new_message))
-                }
             }
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -223,16 +238,14 @@ fun ConversationsScreen(
             }
 
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
+                AppSearchBar(
                     value = state.query,
                     onValueChange = viewModel::setQuery,
-                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
-                    placeholder = { Text(stringResource(R.string.search_hint)) },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true,
+                    hint = stringResource(R.string.search_hint),
+                    modifier = Modifier.weight(1f),
                 )
                 DateFilterButton(
                     filterDate = state.filterDate,
@@ -262,37 +275,45 @@ fun ConversationsScreen(
                     onUndoRule = viewModel::undoTxRuleChange,
                 )
             } else {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(state.conversations, key = { it.id }) { conv ->
-                    ConversationRow(
-                        conversation = conv,
-                        selected = conv.id in state.selection,
-                        selectionMode = state.selectionMode,
-                        calendar = state.settings?.calendar ?: CalendarMode.JALALI,
-                        digits = state.settings?.digits ?: DigitStyle.PERSIAN,
-                        swipeRightArchives = state.settings?.swipeRightArchives ?: true,
-                        onClick = {
-                            if (state.selectionMode) viewModel.toggleSelection(conv.id)
-                            else onOpenChat(conv.id, conv.address)
-                        },
-                        onLongClick = { viewModel.toggleSelection(conv.id) },
-                        onSwipeArchive = {
-                            viewModel.archive(conv.id)
-                            showUndo(archivedMsg)
-                        },
-                        onSwipeTrash = {
-                            viewModel.trash(conv.id)
-                            showUndo(trashedMsg)
-                        },
+                if (state.conversations.isEmpty()) {
+                    AppEmptyState(
+                        icon = Icons.AutoMirrored.Outlined.VolumeUp,
+                        title = stringResource(R.string.app_title),
+                        description = "",
                     )
                 }
-            }
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(state.conversations, key = { it.id }) { conv ->
+                        ConversationRow(
+                            conversation = conv,
+                            selected = conv.id in state.selection,
+                            selectionMode = state.selectionMode,
+                            calendar = state.settings?.calendar ?: CalendarMode.JALALI,
+                            digits = state.settings?.digits ?: DigitStyle.PERSIAN,
+                            swipeRightArchives = state.settings?.swipeRightArchives ?: true,
+                            modifier = Modifier.animateItem(),
+                            onClick = {
+                                if (state.selectionMode) viewModel.toggleSelection(conv.id)
+                                else onOpenChat(conv.id, conv.address)
+                            },
+                            onLongClick = { viewModel.toggleSelection(conv.id) },
+                            onSwipeArchive = {
+                                viewModel.archive(conv.id)
+                                showUndo(archivedMsg)
+                            },
+                            onSwipeTrash = {
+                                viewModel.trash(conv.id)
+                                showUndo(trashedMsg)
+                            },
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TransactionsView(
     state: ConversationsUiState,
@@ -318,69 +339,9 @@ private fun TransactionsView(
     }
     val tx = state.transactions
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                stringResource(R.string.tx_counts, state.depositCount, state.withdrawalCount),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f).padding(vertical = 4.dp),
-            )
-            TextButton(onClick = onMonthlyToggle) {
-                Text(stringResource(R.string.tx_monthly))
-            }
-            TextButton(onClick = onSelectAll) {
-                Text(stringResource(R.string.action_select_all))
-            }
-        }
-        if (state.showMonthlySums) {
-            val (dep, wdr) = state.monthlySums(System.currentTimeMillis())
-            Text(
-                stringResource(
-                    R.string.tx_monthly_sums,
-                    formatAmount(dep, digits),
-                    formatAmount(wdr, digits),
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        }
-        // Subtype filter chips: واریز / برداشت / خرید-پرداخت / OTP / چک / وام / امنیتی
-        Row(Modifier.padding(horizontal = 12.dp)) {
-            val chips = listOf(
-                null to R.string.tx_filter_all,
-                BankTxParser.TxSubtype.DEPOSIT to R.string.tx_deposit,
-                BankTxParser.TxSubtype.WITHDRAWAL to R.string.tx_withdrawal,
-                BankTxParser.TxSubtype.PURCHASE_PAYMENT to R.string.tx_purchase,
-                BankTxParser.TxSubtype.OTP to R.string.tx_otp,
-                BankTxParser.TxSubtype.CHEQUE to R.string.tx_cheque,
-                BankTxParser.TxSubtype.LOAN to R.string.tx_loan,
-                BankTxParser.TxSubtype.SECURITY to R.string.tx_security,
-            )
-            for ((sub, label) in chips) {
-                FilterChip(
-                    selected = state.txSubtypeFilter == sub,
-                    onClick = { onSubtypeFilter(if (state.txSubtypeFilter == sub) null else sub) },
-                    label = { Text(stringResource(label)) },
-                    modifier = Modifier.padding(end = 6.dp),
-                )
-            }
-        }
-        if (state.txSelectionMode) {
-            Text(
-                stringResource(
-                    R.string.tx_selected_sums,
-                    formatAmount(state.selectedSum(BankTxParser.Direction.DEPOSIT), digits),
-                    formatAmount(state.selectedSum(BankTxParser.Direction.WITHDRAWAL), digits),
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        }
+        // Month summary card + subtype chips
+        TxSummaryHeader(state, digits, onMonthlyToggle, onSelectAll, onSubtypeFilter)
+
         Box(Modifier.weight(1f)) {
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         val grouped = remember(tx) { tx.groupBy { it.message.address } }
@@ -390,8 +351,8 @@ private fun TransactionsView(
                 item(key = "maybe_header") {
                     Text(
                         stringResource(R.string.tx_maybe_header),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = appColors.warning,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                     )
                 }
@@ -406,12 +367,13 @@ private fun TransactionsView(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = appColors.secondaryLabel,
                         )
                         TextButton(onClick = { onFeedback(item, true) }) {
                             Text(stringResource(R.string.feedback_is_tx))
                         }
                     }
+                    Hairline()
                 }
             }
             grouped.forEach { (sender, items_) ->
@@ -419,25 +381,32 @@ private fun TransactionsView(
                     com.sirmrm.messageapp.classifier.SenderKey.of(sender).ifBlank { sender.trim() }
                 val needsConfirm = senderKey !in state.txSenderDecisions
                 stickyHeader {
-                    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+                    Surface(color = appColors.groupedBackground) {
                         Column {
                             Text(
                                 sender,
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = appColors.secondaryLabel,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 6.dp),
                             )
                             if (needsConfirm) {
-                                // «Is this sender transactional?» compact ✓/✗ bar.
+                                // «Is this sender transactional?» thin confirm card.
                                 Row(
-                                    Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(appColors.card)
+                                        .padding(horizontal = 8.dp, vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         stringResource(R.string.tx_confirm_sender),
                                         style = MaterialTheme.typography.labelSmall,
                                         modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                        color = appColors.secondaryLabel,
                                     )
                                     IconButton(
                                         onClick = { onConfirmSender(sender, true) },
@@ -446,7 +415,7 @@ private fun TransactionsView(
                                         Icon(
                                             Icons.Filled.Check,
                                             contentDescription = stringResource(R.string.cd_confirm_tx),
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = appColors.deposit,
                                         )
                                     }
                                     IconButton(
@@ -456,7 +425,7 @@ private fun TransactionsView(
                                         Icon(
                                             Icons.Filled.Close,
                                             contentDescription = stringResource(R.string.cd_reject_tx),
-                                            tint = MaterialTheme.colorScheme.error,
+                                            tint = appColors.withdrawal,
                                         )
                                     }
                                 }
@@ -465,91 +434,225 @@ private fun TransactionsView(
                     }
                 }
                 items(items_, key = { it.id }) { item ->
-                val selected = item.id in state.txSelection
-                Surface(
-                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                    else MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = { onToggle(item.id) },
-                            onLongClick = { onToggle(item.id) },
-                        ),
-                ) {
-                    Row(
-                        Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            if (item.suspicious) {
-                                Text(
-                                    stringResource(R.string.tx_suspicious_warning),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                            Text(item.bankName ?: item.message.address, style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                item.message.body,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            item.balanceRials?.let {
-                                Text(
-                                    stringResource(R.string.tx_balance_label, formatAmount(it, digits)),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Text(
-                                JalaliDate.formatDayHeader(item.message.date, calendar, digits),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            // OTP copy button + feedback actions
-                            val otp = if (item.subtype == BankTxParser.TxSubtype.OTP)
-                                BankTxParser.extractOtp(item.message.body) else null
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (otp != null) {
-                                    TextButton(onClick = {
-                                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(otp))
-                                    }) { Text(stringResource(R.string.copy_otp)) }
-                                }
-                                TextButton(onClick = { onFeedback(item, true) }) {
-                                    Text(stringResource(R.string.feedback_is_tx), style = MaterialTheme.typography.labelSmall)
-                                }
-                                TextButton(onClick = { onFeedback(item, false) }) {
-                                    Text(stringResource(R.string.feedback_not_tx), style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                when (item.direction) {
-                                    BankTxParser.Direction.DEPOSIT -> stringResource(R.string.tx_deposit)
-                                    BankTxParser.Direction.WITHDRAWAL -> stringResource(R.string.tx_withdrawal)
-                                    else -> "—"
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (item.direction == BankTxParser.Direction.DEPOSIT)
-                                    MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                            )
-                            item.amountRials?.let {
-                                Text(
-                                    formatAmount(it, digits),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = if (item.direction == BankTxParser.Direction.DEPOSIT)
-                                        MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-                    }
-                }
+                    TxCard(
+                        item = item,
+                        selected = item.id in state.txSelection,
+                        calendar = calendar,
+                        digits = digits,
+                        otp = if (item.subtype == BankTxParser.TxSubtype.OTP)
+                            BankTxParser.extractOtp(item.message.body) else null,
+                        onToggle = { onToggle(item.id) },
+                        onCopyOtp = { otp ->
+                            clipboard.setText(androidx.compose.ui.text.AnnotatedString(otp))
+                        },
+                        onFeedback = { isTx -> onFeedback(item, isTx) },
+                        modifier = Modifier.animateItem(),
+                    )
                 }
             }
         }
+        }
+    }
+}
+
+/** Month summary + subtype filter strip for the transactions tab. */
+@Composable
+private fun TxSummaryHeader(
+    state: ConversationsUiState,
+    digits: DigitStyle,
+    onMonthlyToggle: () -> Unit,
+    onSelectAll: () -> Unit,
+    onSubtypeFilter: (BankTxParser.TxSubtype?) -> Unit,
+) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(appColors.card)
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.tx_counts, state.depositCount, state.withdrawalCount),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = appColors.secondaryLabel,
+                )
+                if (state.showMonthlySums) {
+                    val (dep, wdr) = state.monthlySums(System.currentTimeMillis())
+                    Text(
+                        formatAmount(dep, digits),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = appColors.deposit,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        formatAmount(wdr, digits),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = appColors.withdrawal,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    MiniTxBar(dep, wdr)
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                TextButton(onClick = onMonthlyToggle) { Text(stringResource(R.string.tx_monthly)) }
+                TextButton(onClick = onSelectAll) { Text(stringResource(R.string.action_select_all)) }
+            }
+        }
+        if (state.txSelectionMode) {
+            Text(
+                stringResource(
+                    R.string.tx_selected_sums,
+                    formatAmount(state.selectedSum(BankTxParser.Direction.DEPOSIT), digits),
+                    formatAmount(state.selectedSum(BankTxParser.Direction.WITHDRAWAL), digits),
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = appColors.secondaryLabel,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        // Subtype filters: quiet text tabs.
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp)) {
+            val chips = listOf(
+                null to R.string.tx_filter_all,
+                BankTxParser.TxSubtype.DEPOSIT to R.string.tx_deposit,
+                BankTxParser.TxSubtype.WITHDRAWAL to R.string.tx_withdrawal,
+                BankTxParser.TxSubtype.PURCHASE_PAYMENT to R.string.tx_purchase,
+                BankTxParser.TxSubtype.OTP to R.string.tx_otp,
+                BankTxParser.TxSubtype.CHEQUE to R.string.tx_cheque,
+                BankTxParser.TxSubtype.LOAN to R.string.tx_loan,
+                BankTxParser.TxSubtype.SECURITY to R.string.tx_security,
+            )
+            for ((sub, label) in chips) {
+                val sel = state.txSubtypeFilter == sub
+                Text(
+                    stringResource(label),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (sel) MaterialTheme.colorScheme.primary else appColors.secondaryLabel,
+                    modifier = Modifier
+                        .pressable { onSubtypeFilter(if (sel) null else sub) }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Tiny two-bar deposit/withdrawal chart drawn with Canvas — offline, no lib. */
+@Composable
+private fun MiniTxBar(dep: Long, wdr: Long) {
+    val depC = appColors.deposit
+    val wdrC = appColors.withdrawal
+    val max = maxOf(dep, wdr).coerceAtLeast(1)
+    Canvas(Modifier.padding(top = 8.dp).fillMaxWidth().height(8.dp)) {
+        val h = size.height / 2 - 1.dp.toPx()
+        val w1 = size.width * dep / max
+        val w2 = size.width * wdr / max
+        drawRoundRect(depC, Offset(0f, 0f), Size(w1, h), CornerRadius(h / 2))
+        drawRoundRect(wdrC, Offset(0f, h + 2.dp.toPx()), Size(w2, h), CornerRadius(h / 2))
+    }
+}
+
+/** Minimal transaction card: big green/red amount, bank, balance, Jalali date. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TxCard(
+    item: BankTxItem,
+    selected: Boolean,
+    calendar: CalendarMode,
+    digits: DigitStyle,
+    otp: String?,
+    onToggle: () -> Unit,
+    onCopyOtp: (String) -> Unit,
+    onFeedback: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else appColors.card)
+            .combinedClickable(onClick = onToggle, onLongClick = onToggle)
+            .padding(14.dp),
+    ) {
+        if (item.suspicious) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Warning, null, tint = appColors.warning, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    stringResource(R.string.tx_suspicious_warning),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = appColors.warning,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+        }
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    item.bankName ?: item.message.address,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    item.message.body,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    color = appColors.secondaryLabel,
+                )
+                item.balanceRials?.let {
+                    Text(
+                        stringResource(R.string.tx_balance_label, formatAmount(it, digits)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = appColors.secondaryLabel,
+                    )
+                }
+                Text(
+                    JalaliDate.formatDayHeader(item.message.date, calendar, digits),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = appColors.tertiaryLabel,
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                item.amountRials?.let {
+                    Text(
+                        formatAmount(it, digits),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (item.direction == BankTxParser.Direction.DEPOSIT)
+                            appColors.deposit else appColors.withdrawal,
+                    )
+                }
+                Text(
+                    when (item.direction) {
+                        BankTxParser.Direction.DEPOSIT -> stringResource(R.string.tx_deposit)
+                        BankTxParser.Direction.WITHDRAWAL -> stringResource(R.string.tx_withdrawal)
+                        else -> "—"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = appColors.secondaryLabel,
+                )
+            }
+        }
+        // OTP copy + feedback actions
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (otp != null) {
+                TextButton(onClick = { onCopyOtp(otp) }) { Text(stringResource(R.string.copy_otp)) }
+            }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = { onFeedback(true) }) {
+                Text(stringResource(R.string.feedback_is_tx), style = MaterialTheme.typography.labelSmall)
+            }
+            TextButton(onClick = { onFeedback(false) }) {
+                Text(
+                    stringResource(R.string.feedback_not_tx),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = appColors.secondaryLabel,
+                )
+            }
         }
     }
 }
@@ -588,37 +691,45 @@ private fun DateFilterButton(
                 c.get(java.util.Calendar.DAY_OF_MONTH),
             ).show()
         }) {
-            Icon(Icons.Default.Info, stringResource(R.string.action_filter_date))
+            Icon(Icons.Default.DateRange, stringResource(R.string.action_filter_date), tint = appColors.secondaryLabel)
         }
     }
 }
 
 @Composable
 private fun NotDefaultBanner(onEnableDefault: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(appColors.warning.copy(alpha = 0.12f))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.onErrorContainer)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.banner_not_default_title),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(
-                    stringResource(R.string.banner_not_default_body),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            TextButton(onClick = onEnableDefault) {
-                Text(stringResource(R.string.action_enable))
-            }
+        Icon(Icons.Outlined.Warning, null, tint = appColors.warning)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.banner_not_default_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                stringResource(R.string.banner_not_default_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = appColors.secondaryLabel,
+            )
+        }
+        TextButton(onClick = onEnableDefault) {
+            Text(stringResource(R.string.action_enable))
         }
     }
 }
 
+/**
+ * Quiet tab strip: text labels with a thin moving underline — iOS-like instead
+ * of colored chips.
+ */
 @Composable
 private fun FolderTabs(selected: MessageFolder, onSelect: (MessageFolder) -> Unit) {
     val folders = listOf(
@@ -631,14 +742,33 @@ private fun FolderTabs(selected: MessageFolder, onSelect: (MessageFolder) -> Uni
         MessageFolder.ARCHIVE to R.string.folder_archive,
         MessageFolder.TRASH to R.string.folder_trash,
     )
-    val idx = folders.indexOfFirst { it.first == selected }.coerceAtLeast(0)
-    ScrollableTabRow(selectedTabIndex = idx, edgePadding = 8.dp) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
         folders.forEach { (folder, label) ->
-            Tab(
-                selected = folder == selected,
-                onClick = { onSelect(folder) },
-                text = { Text(stringResource(label)) },
-            )
+            val sel = folder == selected
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.pressable { onSelect(folder) },
+            ) {
+                Text(
+                    stringResource(label),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                    color = if (sel) MaterialTheme.colorScheme.onSurface else appColors.secondaryLabel,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+                Box(
+                    Modifier
+                        .width(if (sel) 20.dp else 0.dp)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(if (sel) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent),
+                )
+            }
         }
     }
 }
@@ -656,6 +786,7 @@ private fun ConversationRow(
     onLongClick: () -> Unit,
     onSwipeArchive: () -> Unit,
     onSwipeTrash: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -672,47 +803,77 @@ private fun ConversationRow(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = modifier,
         backgroundContent = {
             val direction = dismissState.dismissDirection
-            val color = when (direction) {
-                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                else -> MaterialTheme.colorScheme.errorContainer
+            val archiveSwipe = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> swipeRightArchives
+                else -> !swipeRightArchives
             }
             Box(
-                Modifier.fillMaxSize().background(color).padding(horizontal = 24.dp),
-                contentAlignment = Alignment.CenterStart,
+                Modifier
+                    .fillMaxSize()
+                    .background(if (archiveSwipe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd)
+                    Alignment.CenterStart else Alignment.CenterEnd,
             ) {
-                Icon(Icons.Default.Email, null)
+                Icon(
+                    if (archiveSwipe) Icons.Outlined.Archive else Icons.Outlined.Delete,
+                    null,
+                    tint = androidx.compose.ui.graphics.Color.White,
+                )
             }
         },
     ) {
-        Surface(
-            color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-            else MaterialTheme.colorScheme.surface,
-        ) {
+        Surface(color = appColors.card) {
             Row(
                 Modifier
                     .fillMaxWidth()
                     .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(conversation.displayName, selected, conversation.photoUri)
+                if (selectionMode) {
+                    Box(
+                        Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .then(
+                                if (selected) Modifier.background(MaterialTheme.colorScheme.primary)
+                                else Modifier.border(1.5.dp, appColors.separator, CircleShape)
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (selected) Icon(Icons.Filled.Check, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(Modifier.width(10.dp))
+                }
+                AppAvatar(
+                    conversation.displayName,
+                    photo = conversation.photoUri?.let { uri ->
+                        { ContactPhoto(uri, conversation.displayName) }
+                    },
+                )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (conversation.unreadCount > 0) {
+                            UnreadDot()
+                            Spacer(Modifier.width(6.dp))
+                        }
                         if (conversation.pinned) {
                             Icon(
-                                Icons.Default.Star, null,
-                                Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary,
+                                Icons.Outlined.Star, null,
+                                Modifier.size(13.dp),
+                                tint = appColors.warning,
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(3.dp))
                         }
                         Text(
                             conversation.displayName,
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = if (conversation.unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (conversation.unreadCount > 0) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -720,66 +881,54 @@ private fun ConversationRow(
                         Text(
                             JalaliDate.formatListDate(conversation.lastMessageDate, calendar, digits),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = appColors.tertiaryLabel,
                         )
                     }
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             conversation.draft?.let { "draft: $it" } ?: conversation.snippet,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = appColors.secondaryLabel,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
                         if (conversation.maybePromo) {
-                            Badge { Text(stringResource(R.string.badge_maybe_promo)) }
+                            AppBadge(stringResource(R.string.badge_maybe_promo), tint = appColors.warning)
                             Spacer(Modifier.width(4.dp))
                         }
                         if (conversation.unreadCount > 0) {
-                            Badge {
-                                Text(
-                                    if (digits == DigitStyle.PERSIAN)
-                                        conversation.unreadCount.toString().toPersianDigits()
-                                    else conversation.unreadCount.toString()
-                                )
-                            }
+                            AppBadge(
+                                if (digits == DigitStyle.PERSIAN)
+                                    conversation.unreadCount.toString().toPersianDigits()
+                                else conversation.unreadCount.toString(),
+                            )
                         }
                     }
                 }
             }
+            Hairline(indent = 74.dp)
         }
     }
 }
 
 @Composable
-private fun Avatar(name: String, selected: Boolean, photoUri: String?) {
+private fun ContactPhoto(photoUri: String, name: String) {
     val photo = rememberContactPhoto(photoUri)
-    Box(
-        Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(
-                if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.primaryContainer,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        when {
-            selected -> Icon(Icons.Default.Done, null, tint = MaterialTheme.colorScheme.onPrimary)
-            photo != null -> Image(
-                bitmap = photo.asImageBitmap(),
-                contentDescription = name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            else -> Text(
-                name.firstOrNull()?.toString() ?: "#",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
+    if (photo != null) {
+        Image(
+            bitmap = photo.asImageBitmap(),
+            contentDescription = name,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().clip(CircleShape),
+        )
+    } else {
+        Text(
+            name.firstOrNull()?.toString() ?: "#",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

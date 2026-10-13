@@ -1,5 +1,6 @@
 package com.sirmrm.messageapp.feature.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,30 +9,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,9 +37,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sirmrm.messageapp.core.designsystem.AppChevron
+import com.sirmrm.messageapp.core.designsystem.AppListGroup
+import com.sirmrm.messageapp.core.designsystem.AppListRow
+import com.sirmrm.messageapp.core.designsystem.AppSectionHeader
+import com.sirmrm.messageapp.core.designsystem.AppSegmentedControl
+import com.sirmrm.messageapp.core.designsystem.AppSwitch
+import com.sirmrm.messageapp.core.designsystem.Hairline
+import com.sirmrm.messageapp.core.designsystem.appColors
+import com.sirmrm.messageapp.core.designsystem.pressable
 import com.sirmrm.messageapp.domain.model.AppLanguage
 import com.sirmrm.messageapp.domain.model.AppSettings
 import com.sirmrm.messageapp.domain.model.CalendarMode
@@ -59,12 +69,14 @@ fun SettingsScreen(
     val s = settings ?: return
 
     Scaffold(
+        containerColor = appColors.groupedBackground,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = appColors.card),
+                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 },
             )
@@ -72,102 +84,99 @@ fun SettingsScreen(
     ) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize()) {
 
-            item { SectionHeader(stringResource(R.string.section_appearance)) }
+            item { AppSectionHeader(stringResource(R.string.section_appearance)) }
             item {
-                SettingRow(stringResource(R.string.setting_language)) {
-                    SingleChoiceSegmentedButtonRow {
-                        AppLanguage.entries.forEachIndexed { i, lang ->
-                            SegmentedButton(
-                                selected = s.language == lang,
-                                onClick = { viewModel.setLanguage(lang) },
-                                shape = SegmentedButtonDefaults.itemShape(i, 2),
-                            ) { Text(if (lang == AppLanguage.FA) "فارسی" else "English") }
-                        }
+                AppListGroup {
+                    Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                        Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        AppSegmentedControl(
+                            items = AppLanguage.entries,
+                            selected = s.language,
+                            onSelect = viewModel::setLanguage,
+                            label = { if (it == AppLanguage.FA) "فارسی" else "English" },
+                        )
                     }
-                }
-            }
-            item {
-                SettingRow(stringResource(R.string.setting_theme)) {
-                    SingleChoiceSegmentedButtonRow {
-                        ThemeMode.entries.forEachIndexed { i, t ->
-                            SegmentedButton(
-                                selected = s.theme == t,
-                                onClick = { viewModel.setTheme(t) },
-                                shape = SegmentedButtonDefaults.itemShape(i, 3),
-                            ) {
-                                Text(
-                                    when (t) {
-                                        ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
-                                        ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                                        ThemeMode.DARK -> stringResource(R.string.theme_dark)
-                                    }
-                                )
-                            }
-                        }
+                    Hairline()
+                    Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                        Text(stringResource(R.string.setting_theme), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        AppSegmentedControl(
+                            items = ThemeMode.entries,
+                            selected = s.theme,
+                            onSelect = viewModel::setTheme,
+                            label = {
+                                when (it) {
+                                    ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                                }
+                            },
+                        )
                     }
-                }
-            }
-            item {
-                SettingRow(stringResource(R.string.setting_digits)) {
-                    SingleChoiceSegmentedButtonRow {
-                        SegmentedButton(
-                            selected = s.digits == DigitStyle.PERSIAN,
-                            onClick = { viewModel.setDigits(DigitStyle.PERSIAN) },
-                            shape = SegmentedButtonDefaults.itemShape(0, 2),
-                        ) { Text("۱۲۳") }
-                        SegmentedButton(
-                            selected = s.digits == DigitStyle.LATIN,
-                            onClick = { viewModel.setDigits(DigitStyle.LATIN) },
-                            shape = SegmentedButtonDefaults.itemShape(1, 2),
-                        ) { Text("123") }
+                    Hairline()
+                    Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                        Text(stringResource(R.string.setting_digits), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        AppSegmentedControl(
+                            items = DigitStyle.entries,
+                            selected = s.digits,
+                            onSelect = viewModel::setDigits,
+                            label = { if (it == DigitStyle.PERSIAN) "۱۲۳" else "123" },
+                        )
                     }
-                }
-            }
-            item {
-                SettingRow(stringResource(R.string.setting_calendar)) {
-                    SingleChoiceSegmentedButtonRow {
-                        SegmentedButton(
-                            selected = s.calendar == CalendarMode.JALALI,
-                            onClick = { viewModel.setCalendar(CalendarMode.JALALI) },
-                            shape = SegmentedButtonDefaults.itemShape(0, 2),
-                        ) { Text(stringResource(R.string.calendar_jalali)) }
-                        SegmentedButton(
-                            selected = s.calendar == CalendarMode.GREGORIAN,
-                            onClick = { viewModel.setCalendar(CalendarMode.GREGORIAN) },
-                            shape = SegmentedButtonDefaults.itemShape(1, 2),
-                        ) { Text(stringResource(R.string.calendar_gregorian)) }
+                    Hairline()
+                    Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                        Text(stringResource(R.string.setting_calendar), style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        AppSegmentedControl(
+                            items = CalendarMode.entries,
+                            selected = s.calendar,
+                            onSelect = viewModel::setCalendar,
+                            label = {
+                                if (it == CalendarMode.JALALI) stringResource(R.string.calendar_jalali)
+                                else stringResource(R.string.calendar_gregorian)
+                            },
+                        )
                     }
+                    Hairline()
+                    AppListRow(
+                        title = stringResource(R.string.setting_swipe),
+                        trailing = {
+                            AppSwitch(s.swipeRightArchives, viewModel::setSwipeRightArchives)
+                        },
+                    )
                 }
-            }
-            item {
-                ToggleRow(
-                    title = stringResource(R.string.setting_swipe),
-                    checked = s.swipeRightArchives,
-                    onChange = viewModel::setSwipeRightArchives,
-                )
             }
 
-            item { SectionHeader(stringResource(R.string.section_classifier)) }
+            item { AppSectionHeader(stringResource(R.string.section_classifier)) }
             item {
-                ToggleRow(
-                    title = stringResource(R.string.setting_auto_delete),
-                    subtitle = stringResource(R.string.setting_auto_delete_sub),
-                    checked = s.autoDeleteEnabled,
-                    onChange = viewModel::setAutoDelete,
-                )
-            }
-            item {
-                if (s.autoDeleteEnabled) {
-                    Column(Modifier.padding(horizontal = 16.dp)) {
-                        Text(
-                            stringResource(R.string.setting_auto_delete_days, s.autoDeleteDays),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Slider(
-                            value = s.autoDeleteDays.toFloat(),
-                            onValueChange = { viewModel.setAutoDeleteDays(it.toInt()) },
-                            valueRange = 7f..90f,
-                        )
+                AppListGroup {
+                    AppListRow(
+                        title = stringResource(R.string.setting_auto_delete),
+                        subtitle = stringResource(R.string.setting_auto_delete_sub),
+                        trailing = {
+                            AppSwitch(s.autoDeleteEnabled, viewModel::setAutoDelete)
+                        },
+                    )
+                    if (s.autoDeleteEnabled) {
+                        Hairline()
+                        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                            Text(
+                                stringResource(R.string.setting_auto_delete_days, s.autoDeleteDays),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Slider(
+                                value = s.autoDeleteDays.toFloat(),
+                                onValueChange = { viewModel.setAutoDeleteDays(it.toInt()) },
+                                valueRange = 7f..90f,
+                                colors = SliderDefaults.colors(
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    inactiveTrackColor = appColors.fill,
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -177,26 +186,28 @@ fun SettingsScreen(
                 BankPatternsEditor(viewModel, bankPatterns)
             }
 
-            item { SectionHeader(stringResource(R.string.section_privacy)) }
+            item { AppSectionHeader(stringResource(R.string.section_privacy)) }
             item {
-                ToggleRow(
-                    title = stringResource(R.string.setting_biometric),
-                    checked = s.biometricLock,
-                    onChange = viewModel::setBiometric,
-                )
-            }
-            item {
-                ToggleRow(
-                    title = stringResource(R.string.setting_flag_secure),
-                    checked = s.flagSecure,
-                    onChange = viewModel::setFlagSecure,
-                )
+                AppListGroup {
+                    AppListRow(
+                        title = stringResource(R.string.setting_biometric),
+                        trailing = { AppSwitch(s.biometricLock, viewModel::setBiometric) },
+                    )
+                    Hairline()
+                    AppListRow(
+                        title = stringResource(R.string.setting_flag_secure),
+                        trailing = { AppSwitch(s.flagSecure, viewModel::setFlagSecure) },
+                    )
+                    Hairline()
+                    AppListRow(
+                        title = stringResource(R.string.setting_hide_otp),
+                        trailing = { AppSwitch(s.hideOtpContent, viewModel::setHideOtpContent) },
+                    )
+                }
             }
             item { BlockedSendersEditor(viewModel, s.blockedSenders) }
 
-            item {
-                TtsSection(viewModel, s)
-            }
+            item { TtsSection(viewModel, s) }
             item {
                 val keys by viewModel.keyContacts.collectAsState()
                 KeyContactsEditor(viewModel, keys, s.ttsEnabled)
@@ -206,54 +217,82 @@ fun SettingsScreen(
                 SenderRulesSection(viewModel, rules)
             }
 
-            item {
-                LicensesSection()
-            }
+            item { LicensesSection() }
             item { Spacer(Modifier.height(32.dp)) }
         }
     }
 }
 
+/** Pill input row used by the three editors below. */
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
-    )
-}
-
-@Composable
-private fun SettingRow(title: String, content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(8.dp))
-        content()
+private fun InlineAddField(
+    value: String,
+    onValue: (String) -> Unit,
+    hint: String,
+    actionLabel: String,
+    onAction: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .weight(1f)
+                .height(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(appColors.fill)
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValue,
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    androidx.compose.foundation.layout.Box {
+                        if (value.isEmpty()) {
+                            Text(hint, style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
+                        }
+                        inner()
+                    }
+                },
+            )
+        }
+        TextButton(onClick = onAction) { Text(actionLabel) }
     }
 }
 
+/** Removable pattern pill. */
 @Composable
-private fun ToggleRow(title: String, subtitle: String? = null, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun PatternPill(text: String, onRemove: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(end = 6.dp, top = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(appColors.fill)
+            .pressable(onClick = onRemove)
+            .padding(horizontal = 9.dp, vertical = 5.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            subtitle?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onChange)
+        Text(text, style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.width(4.dp))
+        Icon(
+            Icons.Default.Check,
+            contentDescription = null,
+            tint = appColors.secondaryLabel,
+            modifier = Modifier.size(12.dp),
+        )
     }
 }
 
 @Composable
 private fun SenderPatternsEditor(viewModel: SettingsViewModel, patterns: List<String>) {
     var input by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
-
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
             stringResource(R.string.setting_sender_patterns),
@@ -262,35 +301,28 @@ private fun SenderPatternsEditor(viewModel: SettingsViewModel, patterns: List<St
         Text(
             stringResource(R.string.setting_sender_patterns_sub),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColors.secondaryLabel,
         )
         Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("^3000") },
-                singleLine = true,
-            )
-            TextButton(
-                onClick = {
-                    if (input.isNotBlank()) {
-                        viewModel.addSenderPattern(input.trim())
-                        input = ""
+        AppListGroup {
+            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                InlineAddField(
+                    value = input,
+                    onValue = { input = it },
+                    hint = "^3000",
+                    actionLabel = stringResource(R.string.action_add),
+                    onAction = {
+                        if (input.isNotBlank()) {
+                            viewModel.addSenderPattern(input.trim())
+                            input = ""
+                        }
+                    },
+                )
+                Row {
+                    for (p in patterns) {
+                        PatternPill(p) { viewModel.removeSenderPattern(p) }
                     }
                 }
-            ) { Text(stringResource(R.string.action_add)) }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row {
-            for (p in patterns) {
-                FilterChip(
-                    selected = false,
-                    onClick = { viewModel.removeSenderPattern(p) },
-                    label = { Text(p) },
-                    modifier = Modifier.padding(end = 4.dp),
-                )
             }
         }
     }
@@ -302,28 +334,27 @@ private fun BlockedSendersEditor(viewModel: SettingsViewModel, blocked: Set<Stri
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(stringResource(R.string.setting_blocked), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("0912...") },
-                singleLine = true,
-            )
-            TextButton(
-                onClick = {
-                    if (input.isNotBlank()) {
-                        viewModel.blockSender(input.trim())
-                        input = ""
+        AppListGroup {
+            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                InlineAddField(
+                    value = input,
+                    onValue = { input = it },
+                    hint = "0912...",
+                    actionLabel = stringResource(R.string.action_block),
+                    onAction = {
+                        if (input.isNotBlank()) {
+                            viewModel.blockSender(input.trim())
+                            input = ""
+                        }
+                    },
+                )
+                for (b in blocked) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(b, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                        IconButton(onClick = { viewModel.unblockSender(b) }) {
+                            Icon(Icons.Outlined.Delete, null, tint = appColors.withdrawal)
+                        }
                     }
-                }
-            ) { Text(stringResource(R.string.action_block)) }
-        }
-        for (b in blocked) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(b, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                IconButton(onClick = { viewModel.unblockSender(b) }) {
-                    Icon(Icons.Default.Delete, null)
                 }
             }
         }
@@ -344,35 +375,28 @@ private fun BankPatternsEditor(
         Text(
             stringResource(R.string.setting_bank_patterns_sub),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColors.secondaryLabel,
         )
         Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("30003305") },
-                singleLine = true,
-            )
-            TextButton(
-                onClick = {
-                    if (input.isNotBlank()) {
-                        viewModel.addBankPattern(input.trim())
-                        input = ""
+        AppListGroup {
+            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                InlineAddField(
+                    value = input,
+                    onValue = { input = it },
+                    hint = "30003305",
+                    actionLabel = stringResource(R.string.action_add),
+                    onAction = {
+                        if (input.isNotBlank()) {
+                            viewModel.addBankPattern(input.trim())
+                            input = ""
+                        }
+                    },
+                )
+                Row {
+                    for (p in patterns) {
+                        PatternPill(p.pattern) { viewModel.removeBankPattern(p.id) }
                     }
                 }
-            ) { Text(stringResource(R.string.action_add)) }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row {
-            for (p in patterns) {
-                FilterChip(
-                    selected = false,
-                    onClick = { viewModel.removeBankPattern(p.id) },
-                    label = { Text(p.pattern) },
-                    modifier = Modifier.padding(end = 4.dp),
-                )
             }
         }
     }
@@ -390,29 +414,35 @@ private fun SenderRulesSection(
         Text(
             stringResource(R.string.setting_tx_senders_sub),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColors.secondaryLabel,
         )
         Spacer(Modifier.height(8.dp))
-        for (r in txRules) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    r.senderKey,
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    if (r.decision == "ALWAYS_TX") "✓" else "✗",
-                    color = if (r.decision == "ALWAYS_TX") MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error,
-                )
-                TextButton(onClick = {
-                    viewModel.setTxRule(
+        AppListGroup {
+            txRules.forEachIndexed { i, r ->
+                if (i > 0) Hairline()
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
                         r.senderKey,
-                        if (r.decision == "ALWAYS_TX") "NEVER_TX" else "ALWAYS_TX",
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
                     )
-                }) { Text(stringResource(R.string.action_toggle)) }
-                IconButton(onClick = { viewModel.removeRule(r.senderKey) }) {
-                    Icon(Icons.Default.Delete, null)
+                    Text(
+                        if (r.decision == "ALWAYS_TX") "✓" else "✗",
+                        color = if (r.decision == "ALWAYS_TX") appColors.deposit
+                                else appColors.withdrawal,
+                    )
+                    TextButton(onClick = {
+                        viewModel.setTxRule(
+                            r.senderKey,
+                            if (r.decision == "ALWAYS_TX") "NEVER_TX" else "ALWAYS_TX",
+                        )
+                    }) { Text(stringResource(R.string.action_toggle)) }
+                    IconButton(onClick = { viewModel.removeRule(r.senderKey) }) {
+                        Icon(Icons.Outlined.Delete, null, tint = appColors.withdrawal)
+                    }
                 }
             }
         }
@@ -426,61 +456,79 @@ private fun TtsSection(viewModel: SettingsViewModel, s: AppSettings) {
         Text(
             stringResource(R.string.setting_tts_sub),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColors.secondaryLabel,
         )
-        ToggleRow(
-            title = stringResource(R.string.setting_tts_master),
-            checked = s.ttsEnabled,
-            onChange = viewModel::setTtsEnabled,
-        )
-        if (s.ttsEnabled) {
-            // voice picker with preview
-            Text(stringResource(R.string.setting_tts_voice), style = MaterialTheme.typography.bodyMedium)
-            Row(Modifier.padding(vertical = 4.dp)) {
-                listOf("voice1" to "صدای ۱", "voice2" to "صدای ۲", "voice3" to "صدای ۳").forEach { (id, label) ->
-                    FilterChip(
-                        selected = s.ttsVoiceId == id,
-                        onClick = { viewModel.setTtsVoice(id) },
-                        label = { Text(label) },
-                        modifier = Modifier.padding(end = 8.dp),
+        Spacer(Modifier.height(8.dp))
+        AppListGroup {
+            AppListRow(
+                title = stringResource(R.string.setting_tts_master),
+                trailing = { AppSwitch(s.ttsEnabled, viewModel::setTtsEnabled) },
+            )
+            if (s.ttsEnabled) {
+                Hairline()
+                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                    Text(stringResource(R.string.setting_tts_voice), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    AppSegmentedControl(
+                        items = listOf("voice1", "voice2", "voice3"),
+                        selected = s.ttsVoiceId,
+                        onSelect = viewModel::setTtsVoice,
+                        label = {
+                            when (it) {
+                                "voice1" -> "صدای ۱"
+                                "voice2" -> "صدای ۲"
+                                else -> "صدای ۳"
+                            }
+                        },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.setting_tts_speed) + " — ${"%.1f".format(s.ttsSpeed)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = appColors.secondaryLabel,
+                    )
+                    Slider(
+                        value = s.ttsSpeed,
+                        onValueChange = viewModel::setTtsSpeed,
+                        valueRange = 0.5f..2f,
+                        colors = SliderDefaults.colors(
+                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                            inactiveTrackColor = appColors.fill,
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                        ),
+                    )
+                    // preview: default sample or the user's own text
+                    var previewText by remember { mutableStateOf("") }
+                    InlineAddField(
+                        value = previewText,
+                        onValue = { previewText = it },
+                        hint = stringResource(R.string.setting_tts_preview_hint),
+                        actionLabel = stringResource(R.string.setting_tts_preview),
+                        onAction = { viewModel.previewVoice(previewText) },
                     )
                 }
-            }
-            Text(stringResource(R.string.setting_tts_speed) + " — ${"%.1f".format(s.ttsSpeed)}",
-                style = MaterialTheme.typography.bodySmall)
-            Slider(
-                value = s.ttsSpeed,
-                onValueChange = viewModel::setTtsSpeed,
-                valueRange = 0.5f..2f,
-            )
-            // preview: default sample or the user's own text
-            var previewText by remember { mutableStateOf("") }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OutlinedTextField(
-                    value = previewText,
-                    onValueChange = { previewText = it },
-                    placeholder = { Text(stringResource(R.string.setting_tts_preview_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
+                Hairline()
+                AppListRow(
+                    title = stringResource(R.string.setting_tts_hp_only),
+                    trailing = { AppSwitch(s.ttsAutoReadHeadphoneOnly, viewModel::setTtsHpOnly) },
                 )
-                TextButton(onClick = { viewModel.previewVoice(previewText) }) {
-                    Text(stringResource(R.string.setting_tts_preview))
-                }
+                Hairline()
+                AppListRow(
+                    title = stringResource(R.string.setting_tts_screen_only),
+                    trailing = { AppSwitch(s.ttsAutoReadScreenOnOnly, viewModel::setTtsScreenOnly) },
+                )
+                Hairline()
+                AppListRow(
+                    title = stringResource(R.string.setting_tts_auto_otp),
+                    trailing = { AppSwitch(s.ttsAutoReadOtp, viewModel::setTtsAutoOtp) },
+                )
+                Hairline()
+                AppListRow(
+                    title = stringResource(R.string.setting_tts_auto_tx),
+                    trailing = { AppSwitch(s.ttsAutoReadTransactional, viewModel::setTtsAutoTx) },
+                )
             }
-            ToggleRow(stringResource(R.string.setting_tts_hp_only), checked = s.ttsAutoReadHeadphoneOnly, onChange = viewModel::setTtsHpOnly)
-            ToggleRow(stringResource(R.string.setting_tts_screen_only), checked = s.ttsAutoReadScreenOnOnly, onChange = viewModel::setTtsScreenOnly)
-            ToggleRow(stringResource(R.string.setting_tts_auto_otp), checked = s.ttsAutoReadOtp, onChange = viewModel::setTtsAutoOtp)
-            ToggleRow(stringResource(R.string.setting_tts_auto_tx), checked = s.ttsAutoReadTransactional, onChange = viewModel::setTtsAutoTx)
         }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        ToggleRow(
-            title = stringResource(R.string.setting_hide_otp),
-            checked = s.hideOtpContent,
-            onChange = viewModel::setHideOtpContent,
-        )
     }
 }
 
@@ -496,33 +544,39 @@ private fun KeyContactsEditor(
         Text(
             stringResource(R.string.setting_key_contacts_sub),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColors.secondaryLabel,
         )
         if (ttsEnabled) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("0912...") },
-                    singleLine = true,
-                )
-                TextButton(onClick = {
-                    if (input.isNotBlank()) {
-                        viewModel.addKeyContact(input.trim(), input.trim())
-                        input = ""
-                    }
-                }) { Text(stringResource(R.string.action_add)) }
-            }
-            for (kc in contacts) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(kc.displayName, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(
-                        checked = kc.autoRead,
-                        onCheckedChange = { viewModel.setKeyAutoRead(kc.senderKey, it) },
+            Spacer(Modifier.height(8.dp))
+            AppListGroup {
+                Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                    InlineAddField(
+                        value = input,
+                        onValue = { input = it },
+                        hint = "0912...",
+                        actionLabel = stringResource(R.string.action_add),
+                        onAction = {
+                            if (input.isNotBlank()) {
+                                viewModel.addKeyContact(input.trim(), input.trim())
+                                input = ""
+                            }
+                        },
                     )
-                    IconButton(onClick = { viewModel.removeKeyContact(kc.senderKey) }) {
-                        Icon(Icons.Default.Delete, null)
+                }
+                contacts.forEach { kc ->
+                    Hairline()
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(kc.displayName, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                        AppSwitch(
+                            checked = kc.autoRead,
+                            onCheckedChange = { viewModel.setKeyAutoRead(kc.senderKey, it) },
+                        )
+                        IconButton(onClick = { viewModel.removeKeyContact(kc.senderKey) }) {
+                            Icon(Icons.Outlined.Delete, null, tint = appColors.withdrawal)
+                        }
                     }
                 }
             }
@@ -532,15 +586,15 @@ private fun KeyContactsEditor(
 
 @Composable
 private fun LicensesSection() {
-    SectionHeader(stringResource(R.string.licenses_title))
-    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+    AppSectionHeader(stringResource(R.string.licenses_title))
+    AppListGroup {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.licenses_engine), style = MaterialTheme.typography.bodyMedium)
-            Text("sherpa-onnx 1.13.8 — Apache-2.0 — github.com/k2-fsa/sherpa-onnx", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("sherpa-onnx 1.13.8 — Apache-2.0 — github.com/k2-fsa/sherpa-onnx", style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
             Text(stringResource(R.string.licenses_voices), style = MaterialTheme.typography.bodyMedium)
-            Text("fa_IR-amir-medium / fa_IR-ganji-medium / fa_IR-ganji_adabi-medium — MIT — huggingface.co/rhasspy/piper-voices", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("espeak-ng data — GPL-3.0 — github.com/espeak-ng/espeak-ng", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.licenses_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("fa_IR-amir-medium / fa_IR-ganji-medium / fa_IR-ganji_adabi-medium — MIT — huggingface.co/rhasspy/piper-voices", style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
+            Text("espeak-ng data — GPL-3.0 — github.com/espeak-ng/espeak-ng", style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
+            Text(stringResource(R.string.licenses_disclaimer), style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
         }
     }
 }
