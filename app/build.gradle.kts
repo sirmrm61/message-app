@@ -25,6 +25,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // x86_64 only in debug so the emulator can run the native TTS
+            // libs without ARM translation (translated onnxruntime crashes).
+            ndk { abiFilters += "x86_64" }
+        }
         release {
             isMinifyEnabled = false
         }

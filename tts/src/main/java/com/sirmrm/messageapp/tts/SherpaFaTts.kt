@@ -64,7 +64,6 @@ class SherpaFaTts private constructor(
 
     /** Synthesize + play text on a background thread; calls onDone at the end. */
     fun speak(text: String, onDone: (() -> Unit)? = null) {
-        if (!load()) { onDone?.invoke(); return }
         queue.clear()
         queue.addAll(TtsTextPreprocessor.preprocess(text))
         if (queue.isEmpty()) { onDone?.invoke(); return }
@@ -73,7 +72,6 @@ class SherpaFaTts private constructor(
 
     /** Queue several texts back-to-back (auto-read), capped at [maxItems]. */
     fun speakAll(texts: List<String>, maxItems: Int = 3, onDone: (() -> Unit)? = null) {
-        if (!load()) { onDone?.invoke(); return }
         queue.clear()
         texts.take(maxItems).forEach { queue.addAll(TtsTextPreprocessor.preprocess(it)) }
         if (queue.isEmpty()) { onDone?.invoke(); return }
@@ -83,6 +81,9 @@ class SherpaFaTts private constructor(
     private fun startWorker(onDone: (() -> Unit)?) {
         worker?.interrupt()
         worker = Thread {
+            // Model load (SHA-256 + ONNX init) is heavy — keep it off the caller's
+            // thread (usually the main thread).
+            if (!load()) { onDone?.invoke(); return@Thread }
             playing.set(true)
             val track = newTrack()
             val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
