@@ -1,0 +1,22 @@
+[
+  {"text": "فروش ویژه بهاره! تا ۵۰٪ تخفیف روی تمام پوشاک. همین حالا خرید کنید. لغو ۱۱", "label": "spam", "category": "Discount", "indicators": ["unsub", "percent-off", "cta", "discount-word"]},
+  {"text": "واحد ۱۲۰ متری پیش‌فروش در سعادت‌آباد. آخرین فرصت خرید با ۲۵٪ سود. مشارکت در ساخت. تماس: ۲۲۱۲۰۰۰۰", "label": "spam", "category": "RealEstate", "indicators": ["realestate-vocab", "fomo", "invest"]},
+  {"text": "کلینیک زیبایی پارس — جشن افتتاحیه: لیزر و فیشیال ۴۰٪ تخفیف فقط تا ۱۰ روز. رزرو نوبت: لغو ۵", "label": "spam", "category": "Clinic", "indicators": ["clinic-vocab", "fomo", "unsub", "percent-off"]},
+  {"text": "Congratulations! You have won an iPhone 15. Claim your prize now at bit.ly/w1n", "label": "spam", "category": "Prize", "indicators": ["en-spam", "short-link", "cta"]},
+  {"text": "برنده شدید! برای دریافت جایزه‌ی ۱۰ میلیونی، کد ۸۸ را به ۳۰۰۰۵۵ ارسال کنید. لغو ۸۸", "label": "spam", "category": "Lottery", "indicators": ["prize", "send-num", "unsub"]},
+  {"text": "کسب درآمد دلاری با سرمایه‌گذاری مطمئن — سود ثابت ماهانه. فارکس و ارز دیجیتال. عضویت در باشگاه مشتریان", "label": "spam", "category": "Investment", "indicators": ["invest-vocab", "cta", "club"]},
+  {"text": "حساب بانک سامان شما مسدود شد! برای فعال‌سازی وارد لینک زیر شوید: sam-bank.ir/verify — ظرفیت محدود", "label": "spam", "category": "Phishing", "indicators": ["bank-impersonation", "fomo", "link", "urgency"]},
+  {"text": "بسته اینترنت ۳۰ گیگابایت رایگان برای اعضای باشگاه مشتریان! امتیاز شما دو برابر شد. فقط امروز. لغو ۷", "label": "spam", "category": "OperatorPromo", "indicators": ["club", "free-bundle", "fomo", "unsub"]},
+  {"text": "شگفت‌انگیز! جشنواره‌ی فروش تا پایان آبان — هدیه رایگان به ۱۰۰ نفر اول. مشاهده کنید", "label": "spam", "category": "Discount", "indicators": ["festival", "fomo", "gift", "cta_fa"]},
+  {"text": "کارت هدیه ۵۰ هزار تومانی رایگان! بن خرید از فروشگاه X. ارسال عدد ۴۴ به ۲۰۰۰۱۰", "label": "spam", "category": "Voucher", "indicators": ["gift_card", "send_num"]},
+  {"text": "کد تایید ورود به اپلیکیشن: ۴۸۵۹۰۱", "label": "ham", "category": "OTP", "indicators": ["verification-code"]},
+  {"text": "رمز پویا ۶۵۴۳۲۱\nبانک ملت — رمز دوم پویا شما برای تراکنش", "label": "ham", "category": "OTP", "indicators": ["otp-fa", "bank-name"]},
+  {"text": "*بانک شهر* خريد با کارت برداشت از:700796887209 مبلغ:3,803,800ريال موجودي:18,885,299 ريال 1405/04/29", "label": "ham", "category": "Bank", "indicators": ["amount", "balance", "bank-name", "masked-card"]},
+  {"text": "بانک سامان واريز:25,000,000 ريال مانده:40,000,000 ريال 1405/07/20-14:30", "label": "ham", "category": "Bank", "indicators": ["amount", "balance", "jalali-date"]},
+  {"text": "*بانک ملی* ورود به همراه شهر تاريخ : 1405/6/3 ساعت : 17:59:54", "label": "ham", "category": "SecurityEvent", "indicators": ["security-event", "bank-name"]},
+  {"text": "مشتری گرامی، مرسوله شما با کد رهگیری ۲۱۲۳۴۵۶۷۸۹۰ در اداره پست مرکزی است. ساعت مراجعه ۸-۱۳", "label": "ham", "category": "Postal", "indicators": ["tracking-code", "service-notice"]},
+  {"text": "یادآوری: نوبت شما در کلینیک دندان‌پزشکی دکتر رضایی فردا ساعت ۱۶:۳۰. در صورت عدم مراجعه نوبت لغو می‌شود", "label": "ham", "category": "Appointment", "indicators": ["appointment-reminder", "no-cta"]},
+  {"text": "صورتحساب اینترنت مهر ماه: ۳۳۰,۰۰۰ ریال. قابل پرداخت تا ۱۵ آبان. کد قبض: ۴۵۶۷۸۹", "label": "ham", "category": "Bill", "indicators": ["bill-amount", "due-date"]},
+  {"text": "سلام بابا جان، شام میای خونه؟ مامان منتظرته 🙏", "label": "ham", "category": "Personal", "indicators": ["personal-greeting", "no-signals"]},
+  {"text": "معذرت کار زمان خریدای ماهانه پرداختی که جمعه داریم ساعت ۳ فکر کنم بهتره. پرداخت رو فراموش نکن.", "label": "ham", "category": "Personal", "indicators": ["informal-fa", "no-signals"]}
+]
