@@ -14,8 +14,8 @@ android {
         applicationId = "com.sirmrm.messageapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         // Ship only the two ABIs the spec asks for — keeps x86/x86_64 libs out.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }

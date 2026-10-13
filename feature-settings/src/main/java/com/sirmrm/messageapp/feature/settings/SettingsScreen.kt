@@ -1,5 +1,8 @@
 package com.sirmrm.messageapp.feature.settings
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -51,7 +56,9 @@ import com.sirmrm.messageapp.core.designsystem.AppSectionHeader
 import com.sirmrm.messageapp.core.designsystem.AppSegmentedControl
 import com.sirmrm.messageapp.core.designsystem.AppSwitch
 import com.sirmrm.messageapp.core.designsystem.Hairline
+import com.sirmrm.messageapp.core.designsystem.AppIconTile
 import com.sirmrm.messageapp.core.designsystem.appColors
+import com.sirmrm.messageapp.data.export.SmsExporter
 import com.sirmrm.messageapp.core.designsystem.pressable
 import com.sirmrm.messageapp.domain.model.AppLanguage
 import com.sirmrm.messageapp.domain.model.AppSettings
@@ -216,6 +223,8 @@ fun SettingsScreen(
                 val rules by viewModel.senderRules.collectAsState()
                 SenderRulesSection(viewModel, rules)
             }
+
+            item { BackupSection(viewModel) }
 
             item { LicensesSection() }
             item { Spacer(Modifier.height(32.dp)) }
@@ -596,5 +605,60 @@ private fun LicensesSection() {
             Text("espeak-ng data — GPL-3.0 — github.com/espeak-ng/espeak-ng", style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
             Text(stringResource(R.string.licenses_disclaimer), style = MaterialTheme.typography.bodySmall, color = appColors.secondaryLabel)
         }
+    }
+}
+
+@Composable
+private fun BackupSection(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    var format by remember { mutableStateOf(SmsExporter.Format.JSON) }
+    val doneMsg = stringResource(R.string.backup_done)
+    val failMsg = stringResource(R.string.backup_failed)
+    val onResult: (android.net.Uri?) -> Unit = { uri ->
+        if (uri != null) {
+            viewModel.exportMessages(uri, format) { count ->
+                Toast.makeText(
+                    context,
+                    if (count >= 0) doneMsg.format(count) else failMsg,
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
+    val jsonLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(SmsExporter.Format.JSON.mime),
+    ) { onResult(it) }
+    val csvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(SmsExporter.Format.CSV.mime),
+    ) { onResult(it) }
+
+    AppSectionHeader(stringResource(R.string.section_backup))
+    AppListGroup {
+        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+            Text(stringResource(R.string.backup_format), style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(8.dp))
+            AppSegmentedControl(
+                items = SmsExporter.Format.entries,
+                selected = format,
+                onSelect = { format = it },
+                label = { it.name },
+            )
+        }
+        Hairline()
+        AppListRow(
+            title = stringResource(R.string.backup_export_title),
+            subtitle = stringResource(R.string.backup_export_sub),
+            leading = {
+                AppIconTile(
+                    icon = Icons.Outlined.FileDownload,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
+            trailing = { AppChevron() },
+            onClick = {
+                val name = "sms-backup.${format.extension}"
+                if (format == SmsExporter.Format.JSON) jsonLauncher.launch(name) else csvLauncher.launch(name)
+            },
+        )
     }
 }

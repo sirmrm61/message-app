@@ -47,4 +47,10 @@
     <string name="licenses_disclaimer">این سه صدا گویشور فارسی معیار هستند و لهجه‌ی منطقه‌ای ندارند. خواندن کاملاً آفلاین و بدون مجوز INTERNET انجام می‌شود.</string>
     <string name="setting_tts_preview">پخش نمونه</string>
     <string name="setting_tts_preview_hint">متن دلخواه برای آزمایش…</string>
+    <string name="section_backup">Backup</string>
+    <string name="backup_export_title">Export all SMS</string>
+    <string name="backup_export_sub">Save every message as a JSON or CSV file to analyse with an AI tool. Fully offline.</string>
+    <string name="backup_format">File format</string>
+    <string name="backup_done">%1$d messages exported</string>
+    <string name="backup_failed">Export failed</string>
 </resources>

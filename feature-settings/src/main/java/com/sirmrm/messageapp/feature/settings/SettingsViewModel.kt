@@ -9,6 +9,7 @@ import com.sirmrm.messageapp.domain.model.DigitStyle
 import com.sirmrm.messageapp.domain.model.ThemeMode
 import com.sirmrm.messageapp.data.db.CustomBankPatternDao
 import com.sirmrm.messageapp.data.db.CustomBankPatternEntity
+import com.sirmrm.messageapp.data.export.SmsExporter
 import com.sirmrm.messageapp.domain.repository.SenderRuleRepository
 import com.sirmrm.messageapp.domain.repository.SettingsRepository
 import com.sirmrm.messageapp.domain.repository.SenderRuleRow
@@ -28,6 +29,7 @@ class SettingsViewModel @Inject constructor(
     private val senderRuleRepository: SenderRuleRepository,
     private val keyContactDao: com.sirmrm.messageapp.data.db.KeyContactDao,
     @ApplicationContext private val appContext: Context,
+    private val smsExporter: SmsExporter,
 ) : ViewModel() {
 
     /** User-defined bank sender patterns (added in Settings, used at classify time). */
@@ -124,6 +126,14 @@ class SettingsViewModel @Inject constructor(
     }
     fun unblockSender(address: String) = update {
         it.copy(blockedSenders = it.blockedSenders - address)
+    }
+
+    /** Exports every stored SMS to a SAF-picked [uri]; reports the row count or -1 on failure. */
+    fun exportMessages(uri: android.net.Uri, format: SmsExporter.Format, onDone: (Int) -> Unit) {
+        viewModelScope.launch {
+            val count = try { smsExporter.export(uri, format) } catch (_: Exception) { -1 }
+            onDone(count)
+        }
     }
 
     private fun update(transform: (AppSettings) -> AppSettings) =
