@@ -3,6 +3,7 @@ package com.sirmrm.messageapp.data.repo
 import com.sirmrm.messageapp.data.db.SenderRuleDao
 import com.sirmrm.messageapp.data.db.SenderRuleEntity
 import com.sirmrm.messageapp.domain.repository.SenderRuleRepository
+import com.sirmrm.messageapp.domain.repository.SenderRuleRow
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +15,7 @@ class SenderRuleRepositoryImpl @Inject constructor(
 ) : SenderRuleRepository {
 
     private fun key(address: String) =
-        com.sirmrm.messageapp.classifier.TextNormalizer.normalizeSender(address).ifBlank { address.trim() }
+        com.sirmrm.messageapp.classifier.SenderKey.of(address).ifBlank { address.trim() }
 
     override suspend fun setRule(address: String, alwaysPromo: Boolean?) {
         val k = key(address)
@@ -27,6 +28,8 @@ class SenderRuleRepositoryImpl @Inject constructor(
                     address = k,
                     alwaysPromo = alwaysPromo,
                     blocked = existing?.blocked ?: false,
+                    decision = if (alwaysPromo) "ALWAYS_PROMO" else "NEVER_PROMO",
+                    createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 )
             )
         }
@@ -46,7 +49,40 @@ class SenderRuleRepositoryImpl @Inject constructor(
                 address = k,
                 alwaysPromo = existing?.alwaysPromo ?: false,
                 blocked = blocked,
+                decision = existing?.decision,
+                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
             )
         )
     }
+
+    override suspend fun setTxRule(address: String, decision: String?) {
+        val k = key(address)
+        if (decision == null) {
+            senderRuleDao.delete(k)
+            return
+        }
+        val existing = senderRuleDao.get(k)
+        senderRuleDao.upsert(
+            SenderRuleEntity(
+                address = k,
+                alwaysPromo = existing?.alwaysPromo ?: false,
+                blocked = existing?.blocked ?: false,
+                decision = decision,
+                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+            )
+        )
+    }
+
+    override fun observeRules(): Flow<List<SenderRuleRow>> =
+        senderRuleDao.observeAll().map { list ->
+            list.map {
+                SenderRuleRow(
+                    senderKey = it.address,
+                    decision = it.decision,
+                    alwaysPromo = it.alwaysPromo,
+                    blocked = it.blocked,
+                    createdAt = it.createdAt,
+                )
+            }
+        }
 }

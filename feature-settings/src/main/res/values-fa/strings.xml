@@ -26,4 +26,23 @@
     <string name="action_block">مسدودسازی</string>
     <string name="setting_bank_patterns">سرشماره‌های بانکی سفارشی</string>
     <string name="setting_bank_patterns_sub">الگو یا سرشماره بانک خود را اضافه کنید؛ پیام‌های این فرستنده‌ها وزن تراکنشی بیشتری می‌گیرند</string>
+    <string name="setting_tx_senders">فرستنده‌های تأییدشده و ردشده</string>
+    <string name="setting_tx_senders_sub">قاعده‌ی شما بر تشخیص خودکار بانک اولویت دارد.</string>
+    <string name="action_toggle">تغییر</string>
+    <string name="setting_tts">خواندن پیام با صدا</string>
+    <string name="setting_tts_sub">خواندن پیامک‌ها با صدای فارسی، کاملاً آفلاین.</string>
+    <string name="setting_tts_master">خواندن پیامک با صدا</string>
+    <string name="setting_tts_voice">انتخاب صدا</string>
+    <string name="setting_tts_speed">سرعت خواندن</string>
+    <string name="setting_tts_hp_only">خواندن خودکار فقط با هدفون/بلوتوث</string>
+    <string name="setting_tts_screen_only">خواندن خودکار فقط وقتی صفحه روشن است</string>
+    <string name="setting_tts_auto_otp">خواندن خودکار پیام‌های رمز (احتیاط)</string>
+    <string name="setting_tts_auto_tx">خواندن خودکار پیام‌های تراکنشی (احتیاط)</string>
+    <string name="setting_hide_otp">پنهان‌سازی محتوای پیام‌های رمز در اعلان</string>
+    <string name="setting_key_contacts">مخاطبین کلیدی</string>
+    <string name="setting_key_contacts_sub">پیام‌های جدید این مخاطبین خودکار خوانده می‌شوند.</string>
+    <string name="licenses_title">درباره / مجوزها</string>
+    <string name="licenses_engine">موتور تبدیل متن به گفتار</string>
+    <string name="licenses_voices">مدل‌های صوتی فارسی (Piper VITS، فشرده int8)</string>
+    <string name="licenses_disclaimer">این سه صدا گویشور فارسی معیار هستند و لهجه‌ی منطقه‌ای ندارند. خواندن کاملاً آفلاین و بدون مجوز INTERNET انجام می‌شود.</string>
 </resources>

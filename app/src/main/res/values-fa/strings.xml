@@ -22,4 +22,12 @@
     <string name="onboarding_import_done">%d پیامک ایمپورت شد</string>
     <string name="onboarding_import_action">ایمپورت پیامک‌ها</string>
     <string name="onboarding_start">شروع</string>
-</resources>
+    <string name="channel_personal">پیام‌های شخصی</string>
+    <string name="channel_tx">پیام‌های تراکنشی</string>
+    <string name="channel_otp">کدهای یکبارمصرف</string>
+    <string name="channel_promo">تبلیغات</string>
+    <string name="action_mark_read">خوانده شد</string>
+    <string name="action_read_aloud">خواندن</string>
+    <string name="notif_hidden_content">محتوای پیام پنهان است</string>
+    <string name="sms_from">پیام جدید از %1$s</string>
+    <string name="alert_sound">صدای هشدار پیام</string></resources>

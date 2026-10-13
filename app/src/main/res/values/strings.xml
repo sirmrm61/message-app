@@ -22,4 +22,12 @@
     <string name="onboarding_import_done">%d messages imported</string>
     <string name="onboarding_import_action">Import messages</string>
     <string name="onboarding_start">Start</string>
-</resources>
+    <string name="channel_personal">Personal messages</string>
+    <string name="channel_tx">Transactional messages</string>
+    <string name="channel_otp">OTP codes</string>
+    <string name="channel_promo">Promotions</string>
+    <string name="action_mark_read">Mark read</string>
+    <string name="action_read_aloud">Read aloud</string>
+    <string name="notif_hidden_content">Message content hidden</string>
+    <string name="sms_from">New message from %1$s</string>
+    <string name="alert_sound">SMS alert sound</string></resources>

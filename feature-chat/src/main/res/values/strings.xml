@@ -27,4 +27,13 @@
     <string name="reason_percent">Percent off</string>
     <string name="search_in_thread">Search in thread</string>
     <string name="action_filter_date">Filter by date</string>
+    <string name="tx_confirm_sender">Is this sender transactional?</string>
+    <string name="cd_confirm_tx">Confirm transactional sender</string>
+    <string name="cd_reject_tx">Reject transactional sender</string>
+    <string name="tts_read_menu">Read aloud</string>
+    <string name="tts_read_unread">Read unread messages</string>
+    <string name="tts_read_all">Read whole conversation</string>
+    <string name="tts_stop">Stop</string>
+    <string name="tts_key_contact">Key contact</string>
+    <string name="tts_read_bubble">Read this message</string>
 </resources>

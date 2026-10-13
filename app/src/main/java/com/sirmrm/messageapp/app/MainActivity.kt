@@ -25,6 +25,7 @@ import com.sirmrm.messageapp.feature.promotions.PromotionsScreen
 import com.sirmrm.messageapp.feature.settings.SettingsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -38,6 +39,46 @@ class MainActivity : AppCompatActivity() {
             recreate()
         }
 
+    private var smsAlertReceiver: android.content.BroadcastReceiver? = null
+    private val snackbarHostState = androidx.compose.material3.SnackbarHostState()
+
+    override fun onResume() {
+        super.onResume()
+        com.sirmrm.messageapp.app.MessageApp.isInForeground = true
+        // In-app alert for SMS arriving while the UI is showing.
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+                val sender = intent.getStringExtra(com.sirmrm.messageapp.app.ui.InAppAlerts.EXTRA_SENDER) ?: return
+                val body = intent.getStringExtra(com.sirmrm.messageapp.app.ui.InAppAlerts.EXTRA_BODY) ?: ""
+                com.sirmrm.messageapp.app.ui.InAppAlerts.playAlert(context, alertSoundIndex)
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        "${context.getString(R.string.sms_from, sender)}: ${body.take(100)}",
+                        withDismissAction = true,
+                        duration = androidx.compose.material3.SnackbarDuration.Long,
+                    )
+                }
+            }
+        }
+        smsAlertReceiver = r
+        val filter = android.content.IntentFilter(com.sirmrm.messageapp.app.ui.InAppAlerts.ACTION_INCOMING_SMS)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(r, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION") registerReceiver(r, filter)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        com.sirmrm.messageapp.app.MessageApp.isInForeground = false
+        smsAlertReceiver?.let { runCatching { unregisterReceiver(it) } }
+        smsAlertReceiver = null
+    }
+
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+    private var alertSoundIndex = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -48,6 +89,7 @@ class MainActivity : AppCompatActivity() {
             if (current != s.language.tag) {
                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(s.language.tag))
             }
+            alertSoundIndex = s.alertSoundIndex
             if (s.flagSecure) {
                 window.setFlags(
                     WindowManager.LayoutParams.FLAG_SECURE,
@@ -67,6 +109,11 @@ class MainActivity : AppCompatActivity() {
             val s = settings ?: return@setContent
 
             MessageAppTheme(themeMode = s.theme, language = s.language) {
+                androidx.compose.foundation.layout.Box {
+                androidx.compose.material3.SnackbarHost(
+                    snackbarHostState,
+                    modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter),
+                )
                 val nav = rememberNavController()
                 val start = when {
                     !s.onboardingDone -> "onboarding"
@@ -122,6 +169,7 @@ class MainActivity : AppCompatActivity() {
                     composable("settings") {
                         SettingsScreen(onBack = { nav.popBackStack() })
                     }
+                }
                 }
             }
         }

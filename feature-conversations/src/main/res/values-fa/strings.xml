@@ -46,4 +46,9 @@
     <string name="feedback_is_tx">تراکنشی است</string>
     <string name="feedback_not_tx">تراکنشی نیست</string>
     <string name="tx_maybe_header">شاید تراکنشی — برای تأیید لمس کنید</string>
+    <string name="tx_confirm_sender">این فرستنده تراکنشی است؟</string>
+    <string name="cd_confirm_tx">تأیید — فرستنده تراکنشی است</string>
+    <string name="cd_reject_tx">رد — فرستنده تراکنشی نیست</string>
+    <string name="tx_rule_saved">قاعده ثبت شد</string>
+    <string name="undo">بازگردانی</string>
 </resources>

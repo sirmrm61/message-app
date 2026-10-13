@@ -46,24 +46,31 @@ class MessageApp : Application(), Configuration.Provider {
 
     private fun createNotificationChannels() {
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_MESSAGES,
-                getString(R.string.channel_messages),
-                NotificationManager.IMPORTANCE_HIGH,
-            )
-        )
-        nm.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_CLEANUP,
-                getString(R.string.channel_cleanup),
-                NotificationManager.IMPORTANCE_LOW,
-            )
-        )
+        fun channel(id: String, nameRes: Int, importance: Int) {
+            val ch = NotificationChannel(id, getString(nameRes), importance)
+            if (importance <= NotificationManager.IMPORTANCE_LOW) {
+                ch.setSound(null, null)
+                ch.enableVibration(false)
+            }
+            nm.createNotificationChannel(ch)
+        }
+        // Separate channels so users can tune each class — promos stay silent.
+        channel(CHANNEL_PERSONAL, R.string.channel_personal, NotificationManager.IMPORTANCE_HIGH)
+        channel(CHANNEL_TX, R.string.channel_tx, NotificationManager.IMPORTANCE_HIGH)
+        channel(CHANNEL_OTP, R.string.channel_otp, NotificationManager.IMPORTANCE_HIGH)
+        channel(CHANNEL_PROMO, R.string.channel_promo, NotificationManager.IMPORTANCE_LOW)
+        channel(CHANNEL_CLEANUP, R.string.channel_cleanup, NotificationManager.IMPORTANCE_LOW)
     }
 
     companion object {
         const val CHANNEL_MESSAGES = "messages"
+        const val CHANNEL_PERSONAL = "msgs_personal"
+        const val CHANNEL_TX = "msgs_tx"
+        const val CHANNEL_OTP = "msgs_otp"
+        const val CHANNEL_PROMO = "msgs_promo"
         const val CHANNEL_CLEANUP = "cleanup"
+
+        /** Set by MainActivity while the UI is resumed (foreground in-app alerts). */
+        @Volatile var isInForeground: Boolean = false
     }
 }

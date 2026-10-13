@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -36,6 +37,11 @@ data class ChatUiState(
     val searchQuery: String = "",
     /** Day filter (millis of the selected day); null = no filter. */
     val filterDate: Long? = null,
+    /** true when this conversation is in the tx tab with no user rule yet. */
+    val needsTxConfirm: Boolean = false,
+    /** TTS master on + this sender is a key contact. */
+    val isKeyContact: Boolean = false,
+    val txRuleChange: Pair<String, String?>? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,6 +52,8 @@ class ChatViewModel @Inject constructor(
     private val senderRuleRepository: SenderRuleRepository,
     private val settingsRepository: SettingsRepository,
     private val classifierManager: ClassifierManager,
+    private val keyContactDao: com.sirmrm.messageapp.data.db.KeyContactDao,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
 ) : ViewModel() {
 
     private val threadId = MutableStateFlow(-1L)
@@ -62,6 +70,15 @@ class ChatViewModel @Inject constructor(
     private val conversation = threadId.flatMapLatest { id ->
         if (id > 0) conversationRepository.observeConversation(id) else flowOf(null)
     }
+
+    private val keyContacts = keyContactDao.observeAll()
+        .map { list -> list.map { it.senderKey }.toSet() }
+
+    private val txDecisions = senderRuleRepository.observeRules()
+        .map { list: List<com.sirmrm.messageapp.domain.repository.SenderRuleRow> ->
+            list.associate { it.senderKey to (it.decision ?: "") }.filterValues { it.isNotEmpty() }
+        }
+    private val txRuleChange = MutableStateFlow<Pair<String, String?>?>(null)
 
     val state: StateFlow<ChatUiState> = combine(
         messages, conversation, settingsRepository.settings,
@@ -117,6 +134,64 @@ class ChatViewModel @Inject constructor(
     }
 
     /** User feedback: mark this message promo (or not) + learn + sender rule. */
+    fun confirmTxSender(isTx: Boolean) = viewModelScope.launch {
+        val conv = state.value.conversation ?: return@launch
+        val key = com.sirmrm.messageapp.classifier.SenderKey.of(conv.address)
+            .ifBlank { conv.address.trim() }
+        val prev = state.value.txRuleChange?.second
+        senderRuleRepository.setTxRule(key, if (isTx) "ALWAYS_TX" else "NEVER_TX")
+        txRuleChange.value = key to prev
+    }
+
+    fun undoTxRuleChange() = viewModelScope.launch {
+        val c = state.value.txRuleChange ?: return@launch
+        senderRuleRepository.setTxRule(c.first, c.second)
+        txRuleChange.value = null
+    }
+
+    // ---- Read-aloud (offline Persian TTS) ----
+
+    /** Read one bubble's text; press again on the same bubble stops. */
+    fun speak(message: SmsMessage) = viewModelScope.launch {
+        val s = state.value.settings ?: return@launch
+        if (!s.ttsEnabled) return@launch
+        com.sirmrm.messageapp.tts.TtsEngineHolder.speak(appContext, message.body, s.ttsVoiceId)
+    }
+
+    fun stopSpeaking() {
+        com.sirmrm.messageapp.tts.TtsEngineHolder.stop()
+    }
+
+    /** «خواندن پیام‌های ناخوانده» or the last N messages chronologically. */
+    fun speakMessages(unreadOnly: Boolean) = viewModelScope.launch {
+        val s = state.value.settings ?: return@launch
+        if (!s.ttsEnabled) return@launch
+        val msgs = state.value.messages
+            .filter { it.type == com.sirmrm.messageapp.domain.model.MessageType.INBOX }
+            .let { if (unreadOnly) it.filter { m -> !m.read } else it.takeLast(20) }
+        com.sirmrm.messageapp.tts.TtsEngineHolder.speakAll(
+            appContext, msgs.map { it2 -> it2.body }, s.ttsVoiceId)
+    }
+
+    fun toggleKeyContact() = viewModelScope.launch {
+        val conv = state.value.conversation ?: return@launch
+        val key = com.sirmrm.messageapp.classifier.SenderKey.of(conv.address)
+            .ifBlank { conv.address.trim() }
+        if (state.value.isKeyContact) {
+            keyContactDao.delete(key)
+        } else {
+            keyContactDao.upsert(
+                com.sirmrm.messageapp.data.db.KeyContactEntity(
+                    senderKey = key,
+                    displayName = conv.displayName ?: conv.address,
+                    autoRead = true,
+                    voiceId = null,
+                    addedAt = System.currentTimeMillis(),
+                )
+            )
+        }
+    }
+
     fun markPromo(message: SmsMessage, isPromo: Boolean) = viewModelScope.launch {
         classifierManager.learn(message.address, message.body, isPromo)
         senderRuleRepository.setRule(message.address, isPromo)

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "dataDir": "tts/espeak-ng-data",
+  "voices": [
+    {
+      "id": "voice1",
+      "label": "صدای ۱",
+      "desc": "گویشور فارسی معیار (amir)",
+      "model": "tts/voice1/model.int8.onnx",
+      "modelJson": "tts/voice1/model.onnx.json",
+      "tokens": "tts/voice1/tokens.txt",
+      "sha256": "b15b5b42bbbd06f3a3c152049a6c8971fd0d76a769342f14125cf8917c8a85f8",
+      "source": "fa_IR-amir-medium — rhasspy/piper-voices (Hugging Face)",
+      "license": "MIT (Piper voices), model card bundled as MODEL_CARD"
+    },
+    {
+      "id": "voice2",
+      "label": "صدای ۲",
+      "desc": "گویشور فارسی معیار (ganji)",
+      "model": "tts/voice2/model.int8.onnx",
+      "modelJson": "tts/voice2/model.onnx.json",
+      "tokens": "tts/voice2/tokens.txt",
+      "sha256": "237889774ded1c763ac459c7e8ddfa212d9efe4a3f7dcb60537b3288ddea13fe",
+      "source": "fa_IR-ganji-medium — rhasspy/piper-voices (Hugging Face)",
+      "license": "MIT (Piper voices), model card bundled as MODEL_CARD"
+    },
+    {
+      "id": "voice3",
+      "label": "صدای ۳",
+      "desc": "گویشور فارسی معیار (ganji_adabi)",
+      "model": "tts/voice3/model.int8.onnx",
+      "modelJson": "tts/voice3/model.onnx.json",
+      "tokens": "tts/voice3/tokens.txt",
+      "sha256": "fd4ad6b8564e172de4bbdbc47389bbffbf52da17220e0f813b082d8a4f25b674",
+      "source": "fa_IR-ganji_adabi-medium — rhasspy/piper-voices (Hugging Face)",
+      "license": "MIT (Piper voices), model card bundled as MODEL_CARD"
+    }
+  ],
+  "notes": "Add a voice = add a folder under tts/ + one entry here. The gyro model stays out until its license is confirmed."
+}

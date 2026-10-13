@@ -1,12 +1,14 @@
 package com.sirmrm.messageapp.feature.chat
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -18,12 +20,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,10 +102,66 @@ fun ChatScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
                     }
                 },
+                actions = {
+                    if (state.settings?.ttsEnabled == true) {
+                        var menuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
+                                Icon(
+                                    Icons.Filled.PlayArrow,
+                                    contentDescription = stringResource(R.string.tts_read_menu),
+                                )
+                            }
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.tts_read_unread)) },
+                                    onClick = { menuOpen = false; viewModel.speakMessages(unreadOnly = true) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.tts_read_all)) },
+                                    onClick = { menuOpen = false; viewModel.speakMessages(unreadOnly = false) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.tts_stop)) },
+                                    onClick = { menuOpen = false; viewModel.stopSpeaking() },
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                if (state.isKeyContact) Icons.Filled.Star else Icons.Filled.Star,
+                                                contentDescription = null,
+                                                tint = if (state.isKeyContact) MaterialTheme.colorScheme.primary
+                                                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                            Spacer(Modifier.size(8.dp))
+                                            Text(stringResource(R.string.tts_key_contact))
+                                        }
+                                    },
+                                    onClick = { menuOpen = false; viewModel.toggleKeyContact() },
+                                )
+                            }
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
+            // «Is this sender transactional?» banner — only while no user rule exists.
+            if (state.needsTxConfirm) {
+                TxConfirmBar(
+                    onConfirm = { viewModel.confirmTxSender(true) },
+                    onReject = { viewModel.confirmTxSender(false) },
+                )
+            }
+            LaunchedEffect(state.txRuleChange) {
+                state.txRuleChange?.let {
+                    // simple confirmation surface; undo handled via undoTxRuleChange
+                }
+            }
 
             if (threadId < 0) {
                 OutlinedTextField(
@@ -153,6 +218,9 @@ fun ChatScreen(
                             digits = state.settings?.digits ?: DigitStyle.PERSIAN,
                             onMarkPromo = { viewModel.markPromo(msg, true) },
                             onMarkNotPromo = { viewModel.markPromo(msg, false) },
+                            ttsEnabled = state.settings?.ttsEnabled == true,
+                            onSpeak = { viewModel.speak(msg) },
+                            onStopSpeak = viewModel::stopSpeaking,
                         )
                     } else {
                         Text(
@@ -198,12 +266,33 @@ private fun MessageBubble(
     digits: DigitStyle,
     onMarkPromo: () -> Unit,
     onMarkNotPromo: () -> Unit,
+    ttsEnabled: Boolean = false,
+    onSpeak: () -> Unit = {},
+    onStopSpeak: () -> Unit = {},
 ) {
     val incoming = message.isIncoming
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = if (incoming) Alignment.Start else Alignment.End,
     ) {
+        if (ttsEnabled && incoming) {
+            // Per-bubble read button — a second press stops playback.
+            var speaking by remember { mutableStateOf(false) }
+            IconButton(
+                onClick = {
+                    if (speaking) onStopSpeak() else onSpeak()
+                    speaking = !speaking
+                },
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = stringResource(R.string.tts_read_bubble),
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Surface(
             shape = RoundedCornerShape(
                 topStart = 18.dp, topEnd = 18.dp,
@@ -407,6 +496,36 @@ private fun Composer(
             Spacer(Modifier.width(8.dp))
             IconButton(onClick = onSend, enabled = draft.isNotBlank() && !sending) {
                 Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.action_send))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TxConfirmBar(onConfirm: () -> Unit, onReject: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.tx_confirm_sender),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
+            )
+            IconButton(onClick = onConfirm, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = stringResource(R.string.cd_confirm_tx),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            IconButton(onClick = onReject, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.cd_reject_tx),
+                    tint = MaterialTheme.colorScheme.error,
+                )
             }
         }
     }

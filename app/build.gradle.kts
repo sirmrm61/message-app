@@ -16,6 +16,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        // Ship only the two ABIs the spec asks for — keeps x86/x86_64 libs out.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     buildFeatures {
@@ -49,8 +51,10 @@ dependencies {
     implementation(project(":feature-chat"))
     implementation(project(":feature-promotions"))
     implementation(project(":feature-settings"))
+    implementation(project(":tts"))
 
     implementation(libs.androidx.core.ktx)
+    // Offline Persian TTS (sherpa-onnx, Apache-2.0) — bundled AAR, no INTERNET.
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)

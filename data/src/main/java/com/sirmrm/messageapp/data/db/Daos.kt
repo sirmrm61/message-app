@@ -157,6 +157,9 @@ interface SenderRuleDao {
 
     @Query("SELECT address FROM sender_rules WHERE blocked = 1")
     fun observeBlocked(): Flow<List<String>>
+
+    @Query("SELECT * FROM sender_rules ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<SenderRuleEntity>>
 }
 
 @Dao
@@ -202,4 +205,19 @@ interface CustomBankPatternDao {
 
     @Query("DELETE FROM custom_bank_patterns WHERE id = :id")
     suspend fun delete(id: Long)
+}
+
+@Dao
+interface KeyContactDao {
+    @Query("SELECT * FROM key_contacts ORDER BY addedAt DESC")
+    fun observeAll(): Flow<List<KeyContactEntity>>
+
+    @Query("SELECT * FROM key_contacts WHERE senderKey = :key")
+    suspend fun get(key: String): KeyContactEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: KeyContactEntity)
+
+    @Query("DELETE FROM key_contacts WHERE senderKey = :key")
+    suspend fun delete(key: String)
 }

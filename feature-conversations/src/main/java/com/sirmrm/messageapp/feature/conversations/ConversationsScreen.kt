@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
@@ -257,6 +258,8 @@ fun ConversationsScreen(
                     onSubtypeFilter = viewModel::setTxSubtypeFilter,
                     onMonthlyToggle = viewModel::toggleMonthlySums,
                     onFeedback = { item, isTx -> viewModel.feedbackTransactional(item, isTx) },
+                    onConfirmSender = { addr, isTx -> viewModel.confirmTxSender(addr, isTx) },
+                    onUndoRule = viewModel::undoTxRuleChange,
                 )
             } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -300,8 +303,19 @@ private fun TransactionsView(
     onSubtypeFilter: (BankTxParser.TxSubtype?) -> Unit,
     onMonthlyToggle: () -> Unit,
     onFeedback: (BankTxItem, Boolean) -> Unit,
+    onConfirmSender: (String, Boolean) -> Unit,
+    onUndoRule: () -> Unit = {},
 ) {
     val clipboard = LocalClipboardManager.current
+    val snackbar = remember { SnackbarHostState() }
+    val undoLabel = stringResource(R.string.undo)
+    val savedMsg = stringResource(R.string.tx_rule_saved)
+    LaunchedEffect(state.lastTxRuleChange) {
+        if (state.lastTxRuleChange != null) {
+            val r = snackbar.showSnackbar(savedMsg, actionLabel = undoLabel, withDismissAction = true)
+            if (r == SnackbarResult.ActionPerformed) onUndoRule()
+        }
+    }
     val tx = state.transactions
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -367,6 +381,8 @@ private fun TransactionsView(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
+        Box(Modifier.weight(1f)) {
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         val grouped = remember(tx) { tx.groupBy { it.message.address } }
         LazyColumn(Modifier.fillMaxSize()) {
             // «Maybe transactional» suggestions — confirm to move them in.
@@ -399,15 +415,53 @@ private fun TransactionsView(
                 }
             }
             grouped.forEach { (sender, items_) ->
+                val senderKey =
+                    com.sirmrm.messageapp.classifier.SenderKey.of(sender).ifBlank { sender.trim() }
+                val needsConfirm = senderKey !in state.txSenderDecisions
                 stickyHeader {
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
-                        Text(
-                            sender,
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
-                        )
+                        Column {
+                            Text(
+                                sender,
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                            )
+                            if (needsConfirm) {
+                                // «Is this sender transactional?» compact ✓/✗ bar.
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        stringResource(R.string.tx_confirm_sender),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                    )
+                                    IconButton(
+                                        onClick = { onConfirmSender(sender, true) },
+                                        modifier = Modifier.size(48.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Check,
+                                            contentDescription = stringResource(R.string.cd_confirm_tx),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { onConfirmSender(sender, false) },
+                                        modifier = Modifier.size(48.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Close,
+                                            contentDescription = stringResource(R.string.cd_reject_tx),
+                                            tint = MaterialTheme.colorScheme.error,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 items(items_, key = { it.id }) { item ->
@@ -495,6 +549,7 @@ private fun TransactionsView(
                 }
                 }
             }
+        }
         }
     }
 }

@@ -14,9 +14,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MoveLogEntity::class,
         NbTokenEntity::class,
         NbMetaEntity::class,
-        CustomBankPatternEntity::class,
+        CustomBankPatternEntity::class, KeyContactEntity::class,
     ],
-    version = 3,
+    version = 5,
     exportSchema = true,
 )
 abstract class MessageAppDatabase : RoomDatabase() {
@@ -27,6 +27,7 @@ abstract class MessageAppDatabase : RoomDatabase() {
     abstract fun moveLogDao(): MoveLogDao
     abstract fun nbDao(): NbDao
     abstract fun customBankPatternDao(): CustomBankPatternDao
+    abstract fun keyContactDao(): KeyContactDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -47,6 +48,23 @@ abstract class MessageAppDatabase : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS custom_bank_patterns " +
                         "(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "pattern TEXT NOT NULL, createdAt INTEGER NOT NULL)"
+                )
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sender_rules ADD COLUMN decision TEXT")
+                db.execSQL("ALTER TABLE sender_rules ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS key_contacts " +
+                        "(senderKey TEXT PRIMARY KEY NOT NULL, displayName TEXT NOT NULL, " +
+                        "autoRead INTEGER NOT NULL DEFAULT 1, voiceId TEXT, addedAt INTEGER NOT NULL)"
                 )
             }
         }

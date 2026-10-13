@@ -76,6 +76,9 @@ data class SenderRuleEntity(
     @PrimaryKey val address: String,
     val alwaysPromo: Boolean,
     val blocked: Boolean,
+    /** ALWAYS_PROMO / NEVER_PROMO / ALWAYS_TX / NEVER_TX, or null for none. */
+    val decision: String? = null,
+    val createdAt: Long = 0L,
 )
 
 /** Single-level undo: the last folder change applied to messages/threads. */
@@ -103,4 +106,15 @@ data class NbMetaEntity(
     @PrimaryKey val id: Int = 0,
     val promoDocs: Int,
     val hamDocs: Int,
+)
+
+/** Key contact whose new messages may be read aloud automatically. */
+@Entity(tableName = "key_contacts")
+data class KeyContactEntity(
+    @PrimaryKey val senderKey: String,
+    val displayName: String,
+    val autoRead: Boolean = true,
+    /** Optional per-contact voice override; null = default voice. */
+    val voiceId: String? = null,
+    val addedAt: Long,
 )

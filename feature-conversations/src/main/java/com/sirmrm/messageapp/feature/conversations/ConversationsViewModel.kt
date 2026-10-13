@@ -43,6 +43,10 @@ data class ConversationsUiState(
     val txSubtypeFilter: BankTxParser.TxSubtype? = null,
     /** Inbox messages scored as possible bank SMS — shown as suggestions. */
     val maybeTransactions: List<BankTxItem> = emptyList(),
+    /** senderKey -> decision for senders the user already confirmed/rejected. */
+    val txSenderDecisions: Map<String, String> = emptyMap(),
+    /** Last ✓/✗ action for Snackbar undo (senderKey, previousDecision, applied). */
+    val lastTxRuleChange: Triple<String, String?, String>? = null,
     /** Show the optional monthly deposit/withdrawal summary. */
     val showMonthlySums: Boolean = false,
 ) {
@@ -96,6 +100,7 @@ class ConversationsViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val settingsRepository: SettingsRepository,
     private val classifierManager: ClassifierManager,
+    private val senderRuleRepository: com.sirmrm.messageapp.domain.repository.SenderRuleRepository,
     messageDao: MessageDao,
 ) : ViewModel() {
 
@@ -164,6 +169,10 @@ class ConversationsViewModel @Inject constructor(
         }
     }.flowOn(Dispatchers.Default)
 
+    private val txDecisions = senderRuleRepository.observeRules()
+        .map { list -> list.associate { it.senderKey to (it.decision ?: "") }.filterValues { it.isNotEmpty() } }
+    private val lastTxRuleChange = MutableStateFlow<Triple<String, String?, String>?>(null)
+
     private val filteredTransactions = combine(transactions, txSubtypeFilter) { list, sub ->
         val filtered = if (sub == null) list else list.filter { it.subtype == sub }
         // OTP codes younger than 3 minutes stay pinned on top.
@@ -173,7 +182,7 @@ class ConversationsViewModel @Inject constructor(
     val state: StateFlow<ConversationsUiState> = combine(
         filteredConversations, settingsRepository.settings, folder, query, selection,
         filteredTransactions, txSelection, filterDate, txSubtypeFilter, showMonthlySums,
-        maybeTransactions,
+        maybeTransactions, txDecisions, lastTxRuleChange,
     ) { arr ->
         @Suppress("UNCHECKED_CAST")
         ConversationsUiState(
@@ -189,6 +198,8 @@ class ConversationsViewModel @Inject constructor(
             txSubtypeFilter = arr[8] as BankTxParser.TxSubtype?,
             showMonthlySums = arr[9] as Boolean,
             maybeTransactions = arr[10] as List<BankTxItem>,
+            txSenderDecisions = arr[11] as Map<String, String>,
+            lastTxRuleChange = arr[12] as Triple<String, String?, String>?,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConversationsUiState())
 
@@ -247,6 +258,26 @@ class ConversationsViewModel @Inject constructor(
      * User feedback «this is/isn't transactional»: moves the message and
      * feeds the incremental learner so similar messages score better/worse.
      */
+    private fun senderKeyOf(address: String) =
+        com.sirmrm.messageapp.classifier.SenderKey.of(address).ifBlank { address.trim() }
+
+    /** ✓/✗ bar: records the user rule, feeds the learner, remembers for undo. */
+    fun confirmTxSender(address: String, isTx: Boolean) = viewModelScope.launch {
+        val key = senderKeyOf(address)
+        val prev = state.value.txSenderDecisions[key]
+        senderRuleRepository.setTxRule(key, if (isTx) "ALWAYS_TX" else "NEVER_TX")
+        // Incremental learning signal: confirmed → promo=false, rejected → promo=true is
+        // NOT implied (never-tx ≠ promo), so only feed the negative case to NB as ham.
+        runCatching { classifierManager.learn(address, "", isPromo = false) }
+        lastTxRuleChange.value = Triple(key, prev, if (isTx) "ALWAYS_TX" else "NEVER_TX")
+    }
+
+    fun undoTxRuleChange() = viewModelScope.launch {
+        val c = lastTxRuleChange.value ?: return@launch
+        senderRuleRepository.setTxRule(c.first, c.second)
+        lastTxRuleChange.value = null
+    }
+
     fun feedbackTransactional(item: BankTxItem, isTx: Boolean) = viewModelScope.launch {
         messageRepository.moveMessage(
             item.id,

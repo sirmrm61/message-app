@@ -13,6 +13,7 @@ import com.sirmrm.messageapp.data.classifier.mergeConversationFolder
 import com.sirmrm.messageapp.data.contacts.ContactsResolver
 import com.sirmrm.messageapp.data.db.ConversationDao
 import com.sirmrm.messageapp.data.db.ConversationEntity
+import com.sirmrm.messageapp.data.db.KeyContactDao
 import com.sirmrm.messageapp.data.db.MessageDao
 import com.sirmrm.messageapp.data.db.MessageEntity
 import com.sirmrm.messageapp.data.provider.SmsProvider
@@ -41,6 +42,7 @@ class SmsDeliverReceiver : BroadcastReceiver() {
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var notificationHelper: NotificationHelper
     @Inject lateinit var contactsResolver: ContactsResolver
+    @Inject lateinit var keyContactDao: KeyContactDao
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -121,14 +123,70 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                     )
                 )
 
-                // 4. Notify (unless auto-moved promo or muted thread).
-                if (result.decision != Decision.AUTO_MOVE && existing?.muted != true) {
-                    notificationHelper.showMessageNotification(
-                        threadId = threadId,
-                        address = address,
-                        body = body,
-                        isOtp = result.category == SmsCategory.OTP,
+                // 4. Notify — in-app toast while foreground, heads-up otherwise.
+                //    (never for auto-moved promos or muted threads)
+                // Auto-read for key contacts — privacy gates live in AutoReadDecider.
+                run {
+                    val senderKey = com.sirmrm.messageapp.classifier.SenderKey.of(address)
+                        .ifBlank { address.trim() }
+                    val keyContact = runCatching { keyContactDao.get(senderKey) }.getOrNull()
+                    val am = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+                    val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                    val audioDevices = runCatching {
+                        am.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+                            .any { it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                                   it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                                   it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
+                    }.getOrDefault(false)
+                    val envBlocked =
+                        am.ringerMode != android.media.AudioManager.RINGER_MODE_NORMAL ||
+                        (settings.ttsAutoReadHeadphoneOnly && !audioDevices) ||
+                        (settings.ttsAutoReadScreenOnOnly && !pm.isInteractive)
+                    val autoRead = com.sirmrm.messageapp.classifier.tts.AutoReadDecider.shouldAutoRead(
+                        ttsEnabled = settings.ttsEnabled,
+                        isKeyContact = keyContact != null,
+                        keyAutoRead = keyContact?.autoRead ?: false,
+                        category = result.category,
+                        allowOtp = settings.ttsAutoReadOtp,
+                        allowTransactional = settings.ttsAutoReadTransactional,
+                        environmentBlocks = envBlocked,
                     )
+                    if (autoRead) {
+                        if (com.sirmrm.messageapp.app.MessageApp.isInForeground) {
+                            // Foreground: read directly, no service needed.
+                            com.sirmrm.messageapp.tts.TtsEngineHolder.speak(
+                                context.applicationContext, body,
+                                keyContact?.voiceId ?: settings.ttsVoiceId)
+                        } else {
+                            // App closed: try the mediaPlayback foreground service; when the
+                            // platform blocks it (Android 12+), the «خواندن» notification
+                            // action below is the user-driven fallback.
+                            com.sirmrm.messageapp.tts.TtsService.tryStart(
+                                context, body, contact?.displayName ?: address)
+                        }
+                    }
+                }
+
+                if (result.decision != Decision.AUTO_MOVE && existing?.muted != true) {
+                    if (com.sirmrm.messageapp.app.MessageApp.isInForeground) {
+                        context.sendBroadcast(
+                            Intent(com.sirmrm.messageapp.app.ui.InAppAlerts.ACTION_INCOMING_SMS)
+                                .setPackage(context.packageName)
+                                .putExtra(com.sirmrm.messageapp.app.ui.InAppAlerts.EXTRA_SENDER, contact?.displayName ?: address)
+                                .putExtra(com.sirmrm.messageapp.app.ui.InAppAlerts.EXTRA_BODY, body.take(100))
+                        )
+                    } else {
+                        notificationHelper.showMessageNotification(
+                            threadId = threadId,
+                            address = address,
+                            body = body,
+                            displayName = contact?.displayName,
+                            category = result.category,
+                            messageId = providerId ?: 0L,
+                            hideContent = result.category == SmsCategory.OTP && settings.hideOtpContent,
+                            ttsAvailable = settings.ttsEnabled,
+                        )
+                    }
                 }
             } finally {
                 pending.finish()

@@ -43,7 +43,8 @@ internal class RuleEngine(private val config: ClassifierConfig) {
                 SmsCategory.PROMO, 1f, false,
                 listOf(Reason("user_always", "شما این فرستنده را «همیشه تبلیغات» علامت زده‌اید", "You marked this sender as always promo")),
             )
-            null -> Unit
+            // ALWAYS_TX / NEVER_TX are handled after the phishing gate below.
+            SenderRule.ALWAYS_TX, SenderRule.NEVER_TX, null -> Unit
         }
 
         // 2 — whitelist
@@ -68,13 +69,22 @@ internal class RuleEngine(private val config: ClassifierConfig) {
             )
         }
 
+        // User transactional rules outrank the model and the bank list.
+        if (input.senderRule == SenderRule.ALWAYS_TX) {
+            return RuleOutcome(
+                SmsCategory.TRANSACTIONAL, 0f, true,
+                listOf(Reason("user_tx", "شما این فرستنده را تراکنشی تأیید کرده‌اید", "You confirmed this sender as transactional")),
+                verdict,
+            )
+        }
+
         // Protected classes: OTP, then bank transactions.
         val otpReasons = matchAny(text, OTP_PATTERNS)
         if (otpReasons.isNotEmpty()) {
             return RuleOutcome(SmsCategory.OTP, 0f, true, otpReasons, verdict)
         }
 
-        if (verdict.isTransactional) {
+        if (verdict.isTransactional && input.senderRule != SenderRule.NEVER_TX) {
             val reasons = verdict.reasons.map {
                 Reason("bank_$it", "پیامک بانکی/مالی", "Bank / financial message")
             } + Reason("bank_score", "امتیاز بانکی ${"%.2f".format(verdict.score)}", "Bank score ${"%.2f".format(verdict.score)}")
@@ -121,7 +131,8 @@ internal class RuleEngine(private val config: ClassifierConfig) {
         val category = if (score > 0f) SmsCategory.PROMO else SmsCategory.UNKNOWN
         return RuleOutcome(
             category, score.coerceIn(0f, 1f), false, reasons,
-            bank = verdict, maybeTransactional = verdict.maybe,
+            bank = verdict,
+            maybeTransactional = verdict.maybe && input.senderRule != SenderRule.NEVER_TX,
         )
     }
 

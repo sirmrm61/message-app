@@ -35,4 +35,22 @@ data class AppSettings(
     val swipeRightArchives: Boolean = true,
     /** Weekly cleaned-promo counter shown on the home screen. */
     val promosCleanedThisWeek: Int = 0,
+    /** Hide OTP body in notifications (VISIBILITY_PRIVATE). */
+    val hideOtpContent: Boolean = true,
+    /** Index into the built-in alert sounds for incoming SMS. */
+    val alertSoundIndex: Int = 0,
+    // --- Read-aloud (offline Persian TTS) ---
+    /** Master switch — when false no read buttons are shown and no model loads. */
+    val ttsEnabled: Boolean = false,
+    val ttsVoiceId: String = "voice1",
+    /** Piper length_scale proxy — 1.0 normal. */
+    val ttsSpeed: Float = 1.0f,
+    val ttsVolume: Float = 1.0f,
+    /** Auto-read only when headphones/BT are connected. */
+    val ttsAutoReadHeadphoneOnly: Boolean = false,
+    /** Auto-read only while the screen is on. */
+    val ttsAutoReadScreenOnOnly: Boolean = false,
+    /** Dangerous opt-ins: auto-read OTP / transactional even from key contacts. */
+    val ttsAutoReadOtp: Boolean = false,
+    val ttsAutoReadTransactional: Boolean = false,
 )

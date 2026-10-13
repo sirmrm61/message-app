@@ -46,4 +46,9 @@
     <string name="feedback_is_tx">Is transactional</string>
     <string name="feedback_not_tx">Not transactional</string>
     <string name="tx_maybe_header">Maybe transactional — tap to confirm</string>
+    <string name="tx_confirm_sender">Is this sender transactional?</string>
+    <string name="cd_confirm_tx">Confirm transactional sender</string>
+    <string name="cd_reject_tx">Reject transactional sender</string>
+    <string name="tx_rule_saved">Rule saved</string>
+    <string name="undo">Undo</string>
 </resources>

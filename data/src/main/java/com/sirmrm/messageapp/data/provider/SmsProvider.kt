@@ -203,4 +203,19 @@ class SmsProvider @Inject constructor(
             else -> MessageType.INBOX
         }
     }
+
+    /** Mark every message of a thread read in the Telephony provider (system DB). */
+    fun markThreadRead(threadId: Long) {
+        val values = android.content.ContentValues().apply {
+            put(android.provider.Telephony.Sms.READ, 1)
+            put(android.provider.Telephony.Sms.SEEN, 1)
+        }
+        runCatching {
+            context.contentResolver.update(
+                android.provider.Telephony.Sms.CONTENT_URI, values,
+                "${android.provider.Telephony.Sms.THREAD_ID} = ?",
+                arrayOf(threadId.toString()),
+            )
+        }
+    }
 }

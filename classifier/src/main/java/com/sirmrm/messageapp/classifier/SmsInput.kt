@@ -7,6 +7,12 @@ enum class SenderRule {
 
     /** "This sender is never promo" — user un-marked it. */
     NEVER_PROMO,
+
+    /** "This sender is transactional" — user confirmed the ✓ bar. */
+    ALWAYS_TX,
+
+    /** "This sender is not transactional" — user rejected the ✓ bar. */
+    NEVER_TX,
 }
 
 /** Everything the classifier needs to know about one incoming SMS. */

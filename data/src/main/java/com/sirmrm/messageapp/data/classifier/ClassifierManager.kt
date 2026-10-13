@@ -94,8 +94,14 @@ class ClassifierManager @Inject constructor(
             sender = address,
             isContact = isInContacts(address),
             hasConversation = hasReplies(address),
-            senderRule = rule?.let {
-                if (it.alwaysPromo) SenderRule.ALWAYS_PROMO else SenderRule.NEVER_PROMO
+            senderRule = rule?.let { e ->
+                when (e.decision) {
+                    "ALWAYS_PROMO" -> SenderRule.ALWAYS_PROMO
+                    "NEVER_PROMO" -> SenderRule.NEVER_PROMO
+                    "ALWAYS_TX" -> SenderRule.ALWAYS_TX
+                    "NEVER_TX" -> SenderRule.NEVER_TX
+                    else -> if (e.alwaysPromo) SenderRule.ALWAYS_PROMO else SenderRule.NEVER_PROMO
+                }
             },
             knownBankSender = isLearnedBankSender(address),
             customBankSender = isCustomBankSender(address),
@@ -190,9 +196,10 @@ class ClassifierManager @Inject constructor(
         nbDao.upsertMeta(NbMetaEntity(0, snap.promoDocs, snap.hamDocs))
     }
 
-    private fun normalizeAddress(address: String): String =
-        com.sirmrm.messageapp.classifier.TextNormalizer.normalizeSender(address)
-            .ifBlank { address.trim() }
+    private fun normalizeAddress(address: String): String {
+        val key = com.sirmrm.messageapp.classifier.SenderKey.of(address)
+        return key.ifBlank { address.trim() }
+    }
 
     private fun isInContacts(address: String): Boolean {
         return try {

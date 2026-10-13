@@ -1,5 +1,6 @@
 package com.sirmrm.messageapp.feature.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -24,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -41,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sirmrm.messageapp.domain.model.AppLanguage
+import com.sirmrm.messageapp.domain.model.AppSettings
 import com.sirmrm.messageapp.domain.model.CalendarMode
 import com.sirmrm.messageapp.domain.model.DigitStyle
 import com.sirmrm.messageapp.domain.model.ThemeMode
@@ -190,6 +194,21 @@ fun SettingsScreen(
             }
             item { BlockedSendersEditor(viewModel, s.blockedSenders) }
 
+            item {
+                TtsSection(viewModel, s)
+            }
+            item {
+                val keys by viewModel.keyContacts.collectAsState()
+                KeyContactsEditor(viewModel, keys, s.ttsEnabled)
+            }
+            item {
+                val rules by viewModel.senderRules.collectAsState()
+                SenderRulesSection(viewModel, rules)
+            }
+
+            item {
+                LicensesSection()
+            }
             item { Spacer(Modifier.height(32.dp)) }
         }
     }
@@ -355,6 +374,156 @@ private fun BankPatternsEditor(
                     modifier = Modifier.padding(end = 4.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SenderRulesSection(
+    viewModel: SettingsViewModel,
+    rules: List<com.sirmrm.messageapp.domain.repository.SenderRuleRow>,
+) {
+    val txRules = rules.filter { it.decision == "ALWAYS_TX" || it.decision == "NEVER_TX" }
+    if (txRules.isEmpty()) return
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(stringResource(R.string.setting_tx_senders), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(R.string.setting_tx_senders_sub),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        for (r in txRules) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    r.senderKey,
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    if (r.decision == "ALWAYS_TX") "✓" else "✗",
+                    color = if (r.decision == "ALWAYS_TX") MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error,
+                )
+                TextButton(onClick = {
+                    viewModel.setTxRule(
+                        r.senderKey,
+                        if (r.decision == "ALWAYS_TX") "NEVER_TX" else "ALWAYS_TX",
+                    )
+                }) { Text(stringResource(R.string.action_toggle)) }
+                IconButton(onClick = { viewModel.removeRule(r.senderKey) }) {
+                    Icon(Icons.Default.Delete, null)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TtsSection(viewModel: SettingsViewModel, s: AppSettings) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(stringResource(R.string.setting_tts), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(R.string.setting_tts_sub),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ToggleRow(
+            title = stringResource(R.string.setting_tts_master),
+            checked = s.ttsEnabled,
+            onChange = viewModel::setTtsEnabled,
+        )
+        if (s.ttsEnabled) {
+            // voice picker with preview
+            Text(stringResource(R.string.setting_tts_voice), style = MaterialTheme.typography.bodyMedium)
+            Row(Modifier.padding(vertical = 4.dp)) {
+                listOf("voice1" to "صدای ۱", "voice2" to "صدای ۲", "voice3" to "صدای ۳").forEach { (id, label) ->
+                    FilterChip(
+                        selected = s.ttsVoiceId == id,
+                        onClick = { viewModel.setTtsVoice(id) },
+                        label = { Text(label) },
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                }
+            }
+            Text(stringResource(R.string.setting_tts_speed) + " — ${"%.1f".format(s.ttsSpeed)}",
+                style = MaterialTheme.typography.bodySmall)
+            Slider(
+                value = s.ttsSpeed,
+                onValueChange = viewModel::setTtsSpeed,
+                valueRange = 0.5f..2f,
+            )
+            ToggleRow(stringResource(R.string.setting_tts_hp_only), checked = s.ttsAutoReadHeadphoneOnly, onChange = viewModel::setTtsHpOnly)
+            ToggleRow(stringResource(R.string.setting_tts_screen_only), checked = s.ttsAutoReadScreenOnOnly, onChange = viewModel::setTtsScreenOnly)
+            ToggleRow(stringResource(R.string.setting_tts_auto_otp), checked = s.ttsAutoReadOtp, onChange = viewModel::setTtsAutoOtp)
+            ToggleRow(stringResource(R.string.setting_tts_auto_tx), checked = s.ttsAutoReadTransactional, onChange = viewModel::setTtsAutoTx)
+        }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        ToggleRow(
+            title = stringResource(R.string.setting_hide_otp),
+            checked = s.hideOtpContent,
+            onChange = viewModel::setHideOtpContent,
+        )
+    }
+}
+
+@Composable
+private fun KeyContactsEditor(
+    viewModel: SettingsViewModel,
+    contacts: List<com.sirmrm.messageapp.data.db.KeyContactEntity>,
+    ttsEnabled: Boolean,
+) {
+    var input by remember { mutableStateOf("") }
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(stringResource(R.string.setting_key_contacts), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(R.string.setting_key_contacts_sub),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (ttsEnabled) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("0912...") },
+                    singleLine = true,
+                )
+                TextButton(onClick = {
+                    if (input.isNotBlank()) {
+                        viewModel.addKeyContact(input.trim(), input.trim())
+                        input = ""
+                    }
+                }) { Text(stringResource(R.string.action_add)) }
+            }
+            for (kc in contacts) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(kc.displayName, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = kc.autoRead,
+                        onCheckedChange = { viewModel.setKeyAutoRead(kc.senderKey, it) },
+                    )
+                    IconButton(onClick = { viewModel.removeKeyContact(kc.senderKey) }) {
+                        Icon(Icons.Default.Delete, null)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LicensesSection() {
+    SectionHeader(stringResource(R.string.licenses_title))
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.licenses_engine), style = MaterialTheme.typography.bodyMedium)
+            Text("sherpa-onnx 1.13.8 — Apache-2.0 — github.com/k2-fsa/sherpa-onnx", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.licenses_voices), style = MaterialTheme.typography.bodyMedium)
+            Text("fa_IR-amir-medium / fa_IR-ganji-medium / fa_IR-ganji_adabi-medium — MIT — huggingface.co/rhasspy/piper-voices", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("espeak-ng data — GPL-3.0 — github.com/espeak-ng/espeak-ng", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.licenses_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -43,6 +43,16 @@ class SettingsRepositoryImpl @Inject constructor(
         val FLAG_SECURE = booleanPreferencesKey("flag_secure")
         val SWIPE_RIGHT_ARCHIVES = booleanPreferencesKey("swipe_right_archives")
         val PROMOS_CLEANED = intPreferencesKey("promos_cleaned_week")
+        val HIDE_OTP = booleanPreferencesKey("hide_otp_content")
+        val ALERT_SOUND = intPreferencesKey("alert_sound_index")
+        val TTS_ENABLED = booleanPreferencesKey("tts_enabled")
+        val TTS_VOICE = stringPreferencesKey("tts_voice_id")
+        val TTS_SPEED = floatPreferencesKey("tts_speed")
+        val TTS_VOLUME = floatPreferencesKey("tts_volume")
+        val TTS_HP_ONLY = booleanPreferencesKey("tts_hp_only")
+        val TTS_SCREEN_ONLY = booleanPreferencesKey("tts_screen_only")
+        val TTS_AUTO_OTP = booleanPreferencesKey("tts_auto_otp")
+        val TTS_AUTO_TX = booleanPreferencesKey("tts_auto_tx")
     }
 
     override val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -66,6 +76,16 @@ class SettingsRepositoryImpl @Inject constructor(
             flagSecure = p[Keys.FLAG_SECURE] ?: false,
             swipeRightArchives = p[Keys.SWIPE_RIGHT_ARCHIVES] ?: true,
             promosCleanedThisWeek = p[Keys.PROMOS_CLEANED] ?: 0,
+            hideOtpContent = p[Keys.HIDE_OTP] ?: true,
+            alertSoundIndex = p[Keys.ALERT_SOUND] ?: 0,
+            ttsEnabled = p[Keys.TTS_ENABLED] ?: false,
+            ttsVoiceId = p[Keys.TTS_VOICE] ?: "voice1",
+            ttsSpeed = p[Keys.TTS_SPEED] ?: 1.0f,
+            ttsVolume = p[Keys.TTS_VOLUME] ?: 1.0f,
+            ttsAutoReadHeadphoneOnly = p[Keys.TTS_HP_ONLY] ?: false,
+            ttsAutoReadScreenOnOnly = p[Keys.TTS_SCREEN_ONLY] ?: false,
+            ttsAutoReadOtp = p[Keys.TTS_AUTO_OTP] ?: false,
+            ttsAutoReadTransactional = p[Keys.TTS_AUTO_TX] ?: false,
         )
     }
 
@@ -88,6 +108,16 @@ class SettingsRepositoryImpl @Inject constructor(
             p[Keys.FLAG_SECURE] = s.flagSecure
             p[Keys.SWIPE_RIGHT_ARCHIVES] = s.swipeRightArchives
             p[Keys.PROMOS_CLEANED] = s.promosCleanedThisWeek
+            p[Keys.HIDE_OTP] = s.hideOtpContent
+            p[Keys.ALERT_SOUND] = s.alertSoundIndex
+            p[Keys.TTS_ENABLED] = s.ttsEnabled
+            p[Keys.TTS_VOICE] = s.ttsVoiceId
+            p[Keys.TTS_SPEED] = s.ttsSpeed
+            p[Keys.TTS_VOLUME] = s.ttsVolume
+            p[Keys.TTS_HP_ONLY] = s.ttsAutoReadHeadphoneOnly
+            p[Keys.TTS_SCREEN_ONLY] = s.ttsAutoReadScreenOnOnly
+            p[Keys.TTS_AUTO_OTP] = s.ttsAutoReadOtp
+            p[Keys.TTS_AUTO_TX] = s.ttsAutoReadTransactional
         }
     }
 

@@ -1,0 +1,5 @@
+<resources>
+    <string name="channel_tts">خواندن پیام با صدا</string>
+    <string name="tts_reading">در حال خواندن پیام</string>
+    <string name="action_stop">توقف</string>
+</resources>

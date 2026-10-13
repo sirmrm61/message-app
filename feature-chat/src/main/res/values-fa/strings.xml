@@ -27,4 +27,13 @@
     <string name="reason_percent">درصد تخفیف</string>
     <string name="search_in_thread">جست‌وجو در گفت‌وگو</string>
     <string name="action_filter_date">فیلتر تاریخ</string>
+    <string name="tx_confirm_sender">این فرستنده تراکنشی است؟</string>
+    <string name="cd_confirm_tx">تأیید — فرستنده تراکنشی است</string>
+    <string name="cd_reject_tx">رد — فرستنده تراکنشی نیست</string>
+    <string name="tts_read_menu">خواندن</string>
+    <string name="tts_read_unread">خواندن پیام‌های ناخوانده</string>
+    <string name="tts_read_all">خواندن کل مکالمه</string>
+    <string name="tts_stop">توقف</string>
+    <string name="tts_key_contact">مخاطب کلیدی</string>
+    <string name="tts_read_bubble">خواندن این پیام</string>
 </resources>

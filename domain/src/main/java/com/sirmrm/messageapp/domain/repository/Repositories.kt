@@ -50,7 +50,20 @@ interface SenderRuleRepository {
     suspend fun ruleFor(address: String): Boolean?
     fun observeBlocked(): Flow<Set<String>>
     suspend fun setBlocked(address: String, blocked: Boolean)
+
+    /** ALWAYS_TX / NEVER_TX overrides from the ✓/✗ confirm bar (null clears). */
+    suspend fun setTxRule(address: String, decision: String?)
+    /** All rules with a promo/tx decision, for the Settings page. */
+    fun observeRules(): Flow<List<SenderRuleRow>>
 }
+
+data class SenderRuleRow(
+    val senderKey: String,
+    val decision: String?,
+    val alwaysPromo: Boolean,
+    val blocked: Boolean,
+    val createdAt: Long,
+)
 
 interface BackupRepository {
     /** Export messages to SMS Backup & Restore compatible XML. */

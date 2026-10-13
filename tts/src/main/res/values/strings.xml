@@ -1,0 +1,5 @@
+<resources>
+    <string name="channel_tts">Read-aloud</string>
+    <string name="tts_reading">Reading message</string>
+    <string name="action_stop">Stop</string>
+</resources>

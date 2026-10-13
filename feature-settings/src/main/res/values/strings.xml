@@ -26,4 +26,23 @@
     <string name="action_block">Block</string>
     <string name="setting_bank_patterns">Custom bank senders</string>
     <string name="setting_bank_patterns_sub">Add a bank sender id or pattern; messages from these get extra transactional weight</string>
+    <string name="setting_tx_senders">Confirmed &amp; rejected senders</string>
+    <string name="setting_tx_senders_sub">Your rule overrides automatic bank detection.</string>
+    <string name="action_toggle">Flip</string>
+    <string name="setting_tts">Read-aloud</string>
+    <string name="setting_tts_sub">Reads your SMS aloud in Persian, fully offline.</string>
+    <string name="setting_tts_master">Read messages aloud</string>
+    <string name="setting_tts_voice">Voice</string>
+    <string name="setting_tts_speed">Reading speed</string>
+    <string name="setting_tts_hp_only">Auto-read only with headphones/Bluetooth</string>
+    <string name="setting_tts_screen_only">Auto-read only while screen is on</string>
+    <string name="setting_tts_auto_otp">Auto-read OTP messages (caution)</string>
+    <string name="setting_tts_auto_tx">Auto-read transactional messages (caution)</string>
+    <string name="setting_hide_otp">Hide OTP content in notifications</string>
+    <string name="setting_key_contacts">Key contacts</string>
+    <string name="setting_key_contacts_sub">New messages from these contacts are read automatically.</string>
+    <string name="licenses_title">درباره / مجوزها</string>
+    <string name="licenses_engine">موتور تبدیل متن به گفتار</string>
+    <string name="licenses_voices">مدل‌های صوتی فارسی (Piper VITS، فشرده int8)</string>
+    <string name="licenses_disclaimer">این سه صدا گویشور فارسی معیار هستند و لهجه‌ی منطقه‌ای ندارند. خواندن کاملاً آفلاین و بدون مجوز INTERNET انجام می‌شود.</string>
 </resources>
